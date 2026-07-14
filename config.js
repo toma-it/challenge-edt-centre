@@ -15,7 +15,7 @@ const CONFIG = {
 
   // Adresse de base du site une fois publié sur GitHub Pages
   // (sert à générer les QR codes). Ex : "https://moncompte.github.io/challenge-edt-centre"
-  githubBase: "https://github.com/toma-it/challenge-edt-centre",
+  githubBase: "https://toma-it.github.io/challenge-edt-centre",
 
   // Configuration du NOUVEAU projet Firebase créé pour ce challenge
   // (Réglages du projet > Général > Vos applications > SDK).

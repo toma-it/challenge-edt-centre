@@ -10,6 +10,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="common.css">
     <style>
+        :root {
+            --header-offset: 118px;
+            --discipline-offset: 186px;
+        }
+
         header.top {
             position: sticky;
             top: 10px;
@@ -35,8 +40,9 @@
             font-weight: 800;
             margin: 0 0 16px 0;
             position: sticky;
-            top: 118px;
+            top: var(--header-offset);
             z-index: 90;
+            box-shadow: 0 10px 10px -10px rgba(0, 0, 0, .1);
         }
 
         .category-title {
@@ -48,6 +54,10 @@
             width: fit-content;
             border-left: 4px solid #9b3272;
             margin-bottom: 10px;
+            position: sticky;
+            top: var(--discipline-offset);
+            z-index: 80;
+            box-shadow: 0 4px 6px -2px rgba(0, 0, 0, .05);
         }
 
         .rank-cell {
@@ -99,6 +109,20 @@
 
         .speed-slider {
             width: 100%;
+        }
+
+        @media (max-width:900px) {
+            :root {
+                --header-offset: 100px;
+                --discipline-offset: 158px;
+            }
+        }
+
+        @media (max-width:600px) {
+            :root {
+                --header-offset: 84px;
+                --discipline-offset: 132px;
+            }
         }
     </style>
 </head>
@@ -156,6 +180,7 @@
                     document.getElementById('speedSlider').value = cfg.scrollSpeed;
                     scrollSpeed = 90 - cfg.scrollSpeed;
                 }
+                requestAnimationFrame(updateStickyOffsets);
             });
 
             etapeRef.child('shooters').on('value', snap => {
@@ -168,6 +193,20 @@
                 renderResults(all);
             });
         }
+
+        function updateStickyOffsets() {
+            const header = document.querySelector('header.top');
+            const firstDiscTitle = document.querySelector('.discipline-title');
+            if (header) {
+                const headerOffset = header.getBoundingClientRect().height + 20; // +marge top sticky du header
+                document.documentElement.style.setProperty('--header-offset', headerOffset + 'px');
+                if (firstDiscTitle) {
+                    const discOffset = headerOffset + firstDiscTitle.getBoundingClientRect().height + 10;
+                    document.documentElement.style.setProperty('--discipline-offset', discOffset + 'px');
+                }
+            }
+        }
+        window.addEventListener('resize', () => requestAnimationFrame(updateStickyOffsets));
 
         function renderResults(all) {
             const shootersByDiscipline = {};
@@ -189,6 +228,7 @@
             }
 
             document.getElementById('resultsContainer').innerHTML = html;
+            requestAnimationFrame(updateStickyOffsets);
         }
 
         function renderCategoryTables(list, isCombine) {

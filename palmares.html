@@ -222,10 +222,10 @@
             cats.forEach(cat => {
                 const ranked = assignRanks(sortShooters(tree[cat]));
                 html += `<div class="card"><h2>${categoryLabel(cat)}</h2><div class="table-scroll"><table><thead><tr>
-      <th>Pl.</th><th>Licence</th><th>Nom Prénom</th><th>Club</th><th style="text-align:right;">Total</th></tr></thead><tbody>`;
+      <th>Pl.</th><th>Nom Prénom</th><th>Club</th><th style="text-align:right;">Total</th></tr></thead><tbody>`;
                 ranked.forEach(s => {
                     const hr = hasResult(s.status || 'OK');
-                    html += `<tr><td>${s.displayRank}</td><td>${s.licence || '-'}</td><td>${s.lastName} ${s.firstName}</td><td>${s.club || '-'}</td>
+                    html += `<tr><td>${s.displayRank}</td><td>${s.lastName} ${s.firstName}</td><td>${s.club || '-'}</td>
         <td style="text-align:right; font-weight:800;">${hr ? Math.round((s.score || 0) * 10) / 10 : '-'}</td></tr>`;
                 });
                 html += `</tbody></table></div></div>`;
@@ -239,25 +239,20 @@
             let html = '';
             cats.forEach(cat => {
                 const rows = ranking[cat];
-                html += `
-                    <div class="card"><h2>${categoryLabel(cat)} ${isCombine ? '— Combiné EDT (150/154)' : ''}</h2><div class="table-scroll"><table><thead><tr>
-                    <th>Pl.</th><th>Licence</th><th>Nom Prénom</th><th>Club</th>
-                    ${etapesData.map(e => `<th class="etape-col">${e.name}</th>`).join('')}
-                    <th style="text-align:right;">Moy. 3 meill.</th></tr></thead><tbody>
-                `;
+                html += `<div class="card"><h2>${categoryLabel(cat)} ${isCombine ? '— Combiné EDT (150/154)' : ''}</h2><div class="table-scroll"><table><thead><tr>
+      <th>Pl.</th><th>Nom Prénom</th><th>Club</th>
+      ${etapesData.map(e => `<th class="etape-col">${e.name}</th>`).join('')}
+      <th style="text-align:right;">Moy. 3 meill.</th></tr></thead><tbody>`;
                 rows.forEach((r, i) => {
-                    html += `
-                        <tr class="${r.classe ? '' : 'not-classe'}">
-                        <td>${r.classe ? (i + 1) : '-'}</td>
-                        <td>${r.licence || '-'}</td><td>${r.lastName} ${r.firstName}</td><td>${r.club || '-'}</td>
-                        ${r.scoresByEtape.map(v => `<td class="etape-col">${v === null ? '-' : v}</td>`).join('')}
-                        <td class="best3" style="text-align:right;">${r.best3Avg !== null ? r.best3Avg : '-'}</td>
-                        </tr>
-                    `;
+                    html += `<tr class="${r.classe ? '' : 'not-classe'}">
+        <td>${r.classe ? (i + 1) : '-'}</td>
+        <td>${r.lastName} ${r.firstName}</td><td>${r.club || '-'}</td>
+        ${r.scoresByEtape.map(v => `<td class="etape-col">${v === null ? '-' : v}</td>`).join('')}
+        <td class="best3" style="text-align:right;">${r.best3Avg !== null ? r.best3Avg : '-'}</td>
+      </tr>`;
                 });
                 html += `</tbody></table></div>
-                    <p style="font-size:.8rem; color:var(--text-light);">Non classé = moins de 3 étapes disputées (règlement : 3 manches minimum pour être classé).</p></div>
-                `;
+      <p style="font-size:.8rem; color:var(--text-light);">Non classé = moins de 3 étapes disputées (règlement : 3 manches minimum pour être classé).</p></div>`;
             });
             return html;
         }

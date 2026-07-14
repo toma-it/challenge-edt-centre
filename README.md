@@ -29,7 +29,8 @@ seasons/
        ├─ config/                    → { label, active }
        └─ etapes/
             ├─ E1 (…E6)/             → une étape = un département
-            │    ├─ config/          → { name, department, date, order, type:"etape", scrollSpeed }
+            │    ├─ config/          → { name, department, dateStart, dateEnd, order, type:"etape", scrollSpeed }
+            │    │                     (dateEnd optionnel : à renseigner uniquement si l'étape se déroule sur 2 jours)
             │    ├─ shooters/        → { id: { licence, lastName, firstName, club, category,
             │    │                            discipline:"pistolet"|"carabine", status, score, series, mouches } }
             │    └─ pdfs/            → { pistolet, carabine, combine } fichiers PDF ISISWEB déposés
@@ -97,7 +98,7 @@ NOM;PRENOM;LICENCE;ASSOCIATION NOM;CATÉGORIE E;EPREUVE;PLACE;SÉRIE 1;SÉRIE 2;
 1. Depuis `index_admin.html`, cliquer sur **✏️ Saisie / Import CSV** de l'étape concernée.
 2. Importer le CSV exporté par ISISWEB (engagements avant l'étape, puis résultats au fil de l'épreuve — l'import peut être relancé plusieurs fois, il met à jour les fiches existantes).
 3. Déposer, une fois l'étape terminée, les PDF officiels ISISWEB (Pistolet, Carabine, Combiné) depuis `index_admin.html`.
-4. Générer le QR code de la page d'affichage (bouton **📱 QR**) pour l'imprimer et l'afficher sur le lieu de compétition, ou projeter directement `affichage_etape.html?season=...&etape=...` sur un écran.
+4. Générer le QR code de la page d'affichage (bouton **📱 QR**), qui pointe vers une URL du type `https://toma-it.github.io/challenge-edt-centre/affichage_etape.html?season=2026-2027&etape=E1` (ou `affichage_finale.html` pour la Finale). Le bouton **🖨️ Imprimer l'affiche A4** génère une affiche prête à imprimer (logo, nom de l'étape, QR code en grand format, URL de secours), ou projetez directement la page d'affichage sur un écran.
 
 ### 6. Consulter les palmarès
 
