@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palmarès - Challenge EDT</title>
+    <link rel="icon" href="logo.png">
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .print-header {
+            display: none;
+        }
+
+        @media print {
+            .print-header {
+                display: block;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .print-header h1 {
+                color: #042247;
+                margin-bottom: 4px;
+            }
+
+            .print-header .meta {
+                color: #555;
+                font-size: .9rem;
+            }
+        }
+
+        table {
+            font-size: .85rem;
+        }
+
+        th.etape-col,
+        td.etape-col {
+            text-align: center;
+            width: 60px;
+        }
+
+        .not-classe {
+            opacity: .55;
+            font-style: italic;
+        }
+
+        .best3 {
+            font-weight: 800;
+            color: var(--primary-dark);
+            background: #eef2ff;
+        }
+
+        .pdf-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="print-header">
+        <img src="logo.png" style="height:70px;">
+        <h1 id="printTitle">Challenge Régional des Écoles de Tir « La Relève au 10.9 »</h1>
+        <div class="meta" id="printMeta"></div>
+    </div>
+
+    <div class="container">
+        <header class="top no-print">
+            <img src="logo.png" alt="Logo" style="height:60px;">
+            <div style="text-align:center; flex:1;">
+                <h1>Palmarès</h1>
+                <div class="sub" id="challengeSub"></div>
+            </div>
+            <img src="logo.png" alt="" style="height:60px; visibility:hidden;">
+        </header>
+
+        <div class="card no-print">
+            <div class="filters">
+                <label>Saison : <select id="seasonSelect" onchange="onSeasonChange()"></select></label>
+                <label>Vue : <select id="viewSelect" onchange="render()">
+                        <option value="general">🏆 Classement général (moyenne des 3 meilleurs)</option>
+                        <option value="combine">🔗 Classement général Combiné (150/154)</option>
+                        <option value="etape">📍 Par étape</option>
+                    </select></label>
+                <label id="etapeSelectWrap" style="display:none;">Étape : <select id="etapeSelect"
+                        onchange="render()"></select></label>
+                <label>Discipline : <select id="discSelect" onchange="render()"></select></label>
+                <label>Catégorie : <select id="catSelect" onchange="render()">
+                        <option value="ALL">Toutes</option>
+                        ${''}
+                    </select></label>
+                <button class="btn" onclick="window.print()">🖨️ Télécharger en PDF</button>
+            </div>
+            <div id="pdfEtapeLinks" class="pdf-links"></div>
+        </div>
+
+        <div id="resultsArea">
+            <div class="no-data">Chargement...</div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="ranking.js"></script>
+    <script>
+        document.getElementById('challengeSub').textContent = CONFIG.challengeName;
+        document.getElementById('printTitle').textContent = CONFIG.challengeName;
+
+        document.getElementById('catSelect').innerHTML = '<option value="ALL">Toutes</option>' + CATEGORIES.map(c => `<option value="${c.code}">${c.label} (${c.code})</option>`).join('');
+        document.getElementById('discSelect').innerHTML = DISCIPLINES.map(d => `<option value="${d.key}">${d.label}</option>`).join('') + `<option value="${COMBINE.key}">${COMBINE.label}</option>`;
+
+        let seasonsCache = {};
+        let currentSeason = null;
+
+        db.ref(ROOT).on('value', snap => {
+            seasonsCache = snap.val() || {};
+            const keys = Object.keys(seasonsCache).sort().reverse();
+            const sel = document.getElementById('seasonSelect');
+            sel.innerHTML = keys.map(k => `<option value="${k}">${(seasonsCache[k].config && seasonsCache[k].config.label) || k}</option>`).join('');
+            if (!currentSeason && keys.length) currentSeason = keys[0];
+            sel.value = currentSeason;
+            populateEtapeSelect();
+            render();
+        });
+
+        function onSeasonChange() { currentSeason = document.getElementById('seasonSelect').value; populateEtapeSelect(); render(); }
+
+        function populateEtapeSelect() {
+            if (!currentSeason || !seasonsCache[currentSeason]) return;
+            const etapes = seasonsCache[currentSeason].etapes || {};
+            const keys = Object.keys(etapes).sort((a, b) => (etapes[a].config?.order || 0) - (etapes[b].config?.order || 0));
+            document.getElementById('etapeSelect').innerHTML = keys.map(k => `<option value="${k}">${etapes[k].config?.name || k}</option>`).join('');
+        }
+
+        document.getElementById('viewSelect').addEventListener('change', () => {
+            const v = document.getElementById('viewSelect').value;
+            document.getElementById('etapeSelectWrap').style.display = (v === 'etape') ? 'inline' : 'none';
+            document.getElementById('discSelect').closest('label').style.display = (v === 'combine') ? 'none' : 'inline';
+        });
+
+        function getEtapesOfType(type) {
+            if (!currentSeason || !seasonsCache[currentSeason]) return [];
+            const etapes = seasonsCache[currentSeason].etapes || {};
+            return Object.keys(etapes)
+                .filter(k => (etapes[k].config?.type || 'etape') === type)
+                .sort((a, b) => (etapes[a].config?.order || 0) - (etapes[b].config?.order || 0))
+                .map(k => ({
+                    key: k, order: etapes[k].config?.order || 0, name: etapes[k].config?.name || k,
+                    department: etapes[k].config?.department || '',
+                    location: etapes[k].config?.location || '',
+                    shootersRaw: buildShootersRaw(etapes[k].shooters || {}),
+                    pdfs: etapes[k].pdfs || {}
+                }));
+        }
+
+        function buildShootersRaw(shootersObj) {
+            const out = { pistolet: [], carabine: [] };
+            Object.values(shootersObj).forEach(s => {
+                if (out[s.discipline]) out[s.discipline].push(s);
+            });
+            return out;
+        }
+
+        function render() {
+            const view = document.getElementById('viewSelect').value;
+            const area = document.getElementById('resultsArea');
+            const catFilter = document.getElementById('catSelect').value;
+            document.getElementById('pdfEtapeLinks').innerHTML = '';
+            const oldLocLine = document.getElementById('etapeLocLine');
+            if (oldLocLine) oldLocLine.remove();
+
+            if (!currentSeason) { area.innerHTML = '<div class="no-data">Aucune saison disponible.</div>'; return; }
+
+            if (view === 'etape') {
+                const etapeKey = document.getElementById('etapeSelect').value;
+                const etapes = getEtapesOfType('etape').concat(getEtapesOfType('finale'));
+                const etape = etapes.find(e => e.key === etapeKey);
+                if (!etape) { area.innerHTML = '<div class="no-data">Étape introuvable.</div>'; return; }
+                const etapeLocParts = [etape.department ? `Dépt. ${etape.department}` : '', etape.location || ''].filter(Boolean);
+                const etapeLocLabel = etapeLocParts.join(' — ');
+                document.getElementById('printMeta').textContent = `${(seasonsCache[currentSeason].config?.label)||currentSeason} — ${etape.name}${etapeLocLabel ? ' — ' + etapeLocLabel : ''}`;
+
+                document.getElementById('pdfEtapeLinks').insertAdjacentHTML('beforebegin',
+                etapeLocLabel ? `<p id="etapeLocLine" style="font-weight:700; color:var(--primary-dark); margin:0 0 8px 0;">📍 ${etapeLocLabel}</p>` : ''
+                );
+
+                // Liens PDF ISISWEB déposés
+                const links = [];
+                ['pistolet', 'carabine', 'combine'].forEach(dk => {
+                    if (etape.pdfs[dk]) links.push(`<a class="btn small secondary" href="${etape.pdfs[dk].data}" download="${etape.pdfs[dk].name}">📄 PDF ${dk === 'pistolet' ? 'Pistolet' : dk === 'carabine' ? 'Carabine' : 'Combiné'} (ISISWEB)</a>`);
+                });
+                document.getElementById('pdfEtapeLinks').innerHTML = links.join('');
+
+                const discKey = document.getElementById('discSelect').value;
+                let list = discKey === COMBINE.key ? computeCombineForEtape(etape.shootersRaw) : (etape.shootersRaw[discKey] || []);
+                if (catFilter !== 'ALL') list = list.filter(s => normalizeCategoryCode(s.category) === catFilter);
+                area.innerHTML = renderEtapeTables(list, discKey === COMBINE.key);
+                return;
+            }
+
+            const etapesData = getEtapesOfType('etape'); // le classement général exclut la Finale
+            document.getElementById('printMeta').textContent = `${(seasonsCache[currentSeason].config?.label) || currentSeason} — Classement général`;
+
+            if (view === 'combine') {
+                const ranking = buildGeneralRanking(etapesData, COMBINE.key);
+                area.innerHTML = renderGeneralTables(ranking, etapesData, catFilter, true);
+            } else {
+                const discKey = document.getElementById('discSelect').value === COMBINE.key ? 'pistolet' : document.getElementById('discSelect').value;
+                const ranking = buildGeneralRanking(etapesData, discKey);
+                area.innerHTML = renderGeneralTables(ranking, etapesData, catFilter, false);
+            }
+        }
+
+        function renderEtapeTables(list, isCombine) {
+            const tree = groupByCategory(list);
+            const cats = Object.keys(tree).sort();
+            if (cats.length === 0) return '<div class="no-data">Aucun résultat.</div>';
+            let html = '';
+            cats.forEach(cat => {
+                const ranked = assignRanks(sortShooters(tree[cat]));
+                html += `<div class="card"><h2>${categoryLabel(cat)}</h2><div class="table-scroll"><table><thead><tr>
+      <th>Pl.</th><th>Nom Prénom</th><th>Club</th><th style="text-align:right;">Total</th></tr></thead><tbody>`;
+                ranked.forEach(s => {
+                    const hr = hasResult(s.status || 'OK');
+                    html += `<tr><td>${s.displayRank}</td><td>${s.lastName} ${s.firstName}</td><td>${s.club || '-'}</td>
+        <td style="text-align:right; font-weight:800;">${hr ? Math.round((s.score || 0) * 10) / 10 : '-'}</td></tr>`;
+                });
+                html += `</tbody></table></div></div>`;
+            });
+            return html;
+        }
+
+        function renderGeneralTables(ranking, etapesData, catFilter, isCombine) {
+            const cats = Object.keys(ranking).filter(c => catFilter === 'ALL' || c === catFilter).sort();
+            if (cats.length === 0) return '<div class="no-data">Aucun résultat pour le moment.</div>';
+            let html = '';
+            cats.forEach(cat => {
+                const rows = ranking[cat];
+                html += `<div class="card"><h2>${categoryLabel(cat)} ${isCombine ? '— Combiné EDT (150/154)' : ''}</h2><div class="table-scroll"><table><thead><tr>
+      <th>Pl.</th><th>Nom Prénom</th><th>Club</th>
+      ${etapesData.map(e => `<th class="etape-col">${e.name}</th>`).join('')}
+      <th style="text-align:right;">Moy. 3 meill.</th></tr></thead><tbody>`;
+                rows.forEach((r, i) => {
+                    html += `<tr class="${r.classe ? '' : 'not-classe'}">
+        <td>${r.classe ? (i + 1) : '-'}</td>
+        <td>${r.lastName} ${r.firstName}</td><td>${r.club || '-'}</td>
+        ${r.scoresByEtape.map(v => `<td class="etape-col">${v === null ? '-' : v}</td>`).join('')}
+        <td class="best3" style="text-align:right;">${r.best3Avg !== null ? r.best3Avg : '-'}</td>
+      </tr>`;
+                });
+                html += `</tbody></table></div>
+      <p style="font-size:.8rem; color:var(--text-light);">Non classé = moins de 3 étapes disputées (règlement : 3 manches minimum pour être classé).</p></div>`;
+            });
+            return html;
+        }
+    </script>
+</body>
+
+</html>
