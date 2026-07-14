@@ -197,6 +197,51 @@ input:focus, select:focus {
     border-color: var(--accent);
 }
 
+/* ======================================================================
+   ZONE GLISSER-DÉPOSER (DROP ZONE - ADMIN)
+   ====================================================================== */
+.drop-zone {
+    width: 100%;
+    height: 150px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    border: 2px dashed var(--accent);
+    border-radius: 8px;
+    background-color: rgba(66, 131, 211, 0.03);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.drop-zone:hover {
+    background-color: rgba(66, 131, 211, 0.08);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.drop-zone--over {
+    border-style: solid;
+    background-color: rgba(66, 131, 211, 0.15);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.01);
+}
+
+.drop-zone input[type="file"] {
+    display: none;
+}
+
+.drop-zone-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
 /* Style général des tableaux sur le site */
 .table-container {
     overflow-x: auto;
