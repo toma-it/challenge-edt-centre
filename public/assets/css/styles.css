@@ -1,15 +1,15 @@
-/* Thème & Variables de couleur */
 :root {
-    --primary: #0f4c81;       /* Bleu Royal Sportif */
-    --primary-light: #eaf2f9; /* Pastel d'arrière-plan */
-    --accent: #f5a623;        /* Or / Cible */
-    --bg-main: #f8fafc;       /* Gris très clair */
+    --bg-main: #fffdef; /* Fond beige */
+    --primary: #042247; /* Bleu marine */
+    --primary-light: #8dafd8; /* Bleu clair */
+    --accent: #4283d3; /* Bleu d'accentuation */
+    --text-dark: #042247;
+    --text-muted: #5b6f84;
+    --border-color: #d0deeb;
     --card-bg: #ffffff;
-    --text-dark: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --success: #10b981;
-    --danger: #ef4444;
+    --success: #2e7d32;
+    --danger: #c62828;
+    --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -19,160 +19,113 @@
 }
 
 body {
-    font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-main);
     color: var(--text-dark);
-    line-height: 1.6;
+    font-family: var(--font-family);
+    line-height: 1.5;
 }
 
-/* En-têtes & Navigation */
 header {
     background-color: var(--primary);
     color: white;
-    padding: 1.5rem 2rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 1.25rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 3px solid var(--primary-light);
 }
 
 header h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
+    letter-spacing: -0.5px;
 }
 
 header h1 span {
-    color: var(--accent);
+    color: var(--primary-light);
 }
 
-nav a {
-    color: white;
+header nav {
+    display: flex;
+    gap: 1rem;
+}
+
+header nav a {
+    color: #eaf2f9;
     text-decoration: none;
-    margin-left: 1.5rem;
-    font-weight: 500;
-    transition: color 0.3s;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
-nav a:hover, nav a.active {
-    color: var(--accent);
+header nav a:hover, header nav a.active {
+    background-color: var(--accent);
+    color: white;
 }
 
-/* Conteneurs */
 .container {
     max-width: 1200px;
     margin: 2rem auto;
-    padding: 0 1rem;
+    padding: 0 1.5rem;
 }
 
-/* Cartes (Dashboard Index) */
-.grid-menu {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
-}
-
+/* Cartes */
 .card {
     background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     border: 1px solid var(--border-color);
-    transition: transform 0.3s, box-shadow 0.3s;
-    cursor: pointer;
-    text-decoration: none;
-    color: inherit;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-}
-
-.card h2 {
-    color: var(--primary);
-    margin-bottom: 1rem;
-    font-size: 1.3rem;
-}
-
-/* Boutons */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--primary);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.btn:hover {
-    background-color: #0b3a62;
-}
-
-.btn-accent {
-    background-color: var(--accent);
-    color: var(--text-dark);
-}
-
-.btn-accent:hover {
-    background-color: #e09212;
-}
-
-.btn-danger {
-    background-color: var(--danger);
-}
-
-.btn-danger:hover {
-    background-color: #dc2626;
-}
-
-/* Formulaires & Filtres */
-.filter-bar {
-    background-color: var(--card-bg);
-    padding: 1.5rem;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 2rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    align-items: flex-end;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
 }
 
+.card h3 {
+    color: var(--primary);
+    font-size: 1.15rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--bg-main);
+    padding-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+/* Formulaires */
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    flex: 1;
-    min-width: 200px;
+    margin-bottom: 1rem;
 }
 
 label {
-    font-size: 0.85rem;
     font-weight: 600;
-    color: var(--text-muted);
+    font-size: 0.85rem;
+    color: var(--text-dark);
 }
 
-select, input[type="file"], input[type="text"], input[type="password"] {
-    padding: 0.75rem;
-    border-radius: 8px;
+input, select {
+    padding: 0.65rem;
     border: 1px solid var(--border-color);
-    background-color: #f8fafc;
+    background-color: var(--bg-main);
+    border-radius: 8px;
+    color: var(--text-dark);
+    font-family: inherit;
     font-size: 0.95rem;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(66, 131, 211, 0.15);
 }
 
 /* Tableaux */
 .table-container {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     overflow-x: auto;
     border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
 }
 
 table {
@@ -185,62 +138,93 @@ th {
     background-color: var(--primary-light);
     color: var(--primary);
     font-weight: 700;
-    padding: 1rem;
-    font-size: 0.9rem;
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 td {
-    padding: 1rem;
+    padding: 0.85rem 1rem;
     border-bottom: 1px solid var(--border-color);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    color: var(--text-dark);
 }
 
 tr:last-child td {
     border-bottom: none;
 }
 
-tr:nth-child(even) {
-    background-color: #f8fafc;
+tr:nth-child(even) td {
+    background-color: rgba(141, 175, 216, 0.04);
 }
 
-/* Panneau d'administration */
-.admin-grid {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 2rem;
-}
-
-.auth-card {
-    max-width: 400px;
-    margin: 10% auto;
-    background: white;
-    padding: 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-}
-
-/* Zone d'importation CSV */
+/* Zone d'import CSV (Dropzone) */
 .dropzone {
-    border: 2px dashed var(--primary);
-    background-color: var(--primary-light);
+    border: 2px dashed var(--primary-light);
+    border-radius: 12px;
     padding: 2rem;
     text-align: center;
-    border-radius: 8px;
+    background-color: var(--bg-main);
     cursor: pointer;
-    margin-top: 1rem;
+    transition: all 0.2s ease;
+    color: var(--primary);
+    font-weight: 600;
 }
 
-/* --- Styles spécifiques pour l'exportation PDF --- */
-.pdf-layout {
-    display: none; /* Masqué à l'écran */
+.dropzone:hover {
+    border-color: var(--accent);
+    background-color: rgba(66, 131, 211, 0.04);
 }
 
-@media print {
-    body {
-        background-color: white;
-    }
-    .no-print {
-        display: none !important;
-    }
+/* Boutons */
+.btn {
+    display: inline-block;
+    padding: 0.65rem 1.25rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--accent);
+}
+
+.btn-accent {
+    background-color: var(--accent);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-primary {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.badge-success {
+    background-color: #e8f5e9;
+    color: var(--success);
 }

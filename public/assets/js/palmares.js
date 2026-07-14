@@ -7,8 +7,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let allSteps = {};
     let shooters = {};
 
-    function initFiltersFromConfig() {
-        filterDiscipline.innerHTML = "";
+    function initFilters() {
+        filterDiscipline.innerHTML = '<option value="all">Toutes les epreuves</option>';
         DISCIPLINES.forEach(d => {
             filterDiscipline.innerHTML += `<option value="${d.key}">${d.label}</option>`;
         });
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    initFiltersFromConfig();
+    initFilters();
 
     db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
         const data = snapshot.val();
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const generalOpt = document.createElement("option");
         generalOpt.value = "general";
-        generalOpt.textContent = "Classement Général (Moyennes)";
+        generalOpt.textContent = "Classement General (Moyennes)";
         filterStep.appendChild(generalOpt);
 
         if (currentVal) filterStep.value = currentVal;
@@ -64,101 +64,175 @@ document.addEventListener("DOMContentLoaded", () => {
         const tableHeaders = document.getElementById("table-headers");
         const tableBody = document.getElementById("table-body");
 
-        if (targetStep === "general") {
-            tableHeaders.innerHTML = `
-                <th style="width: 8%">Rg</th>
-                <th>Nom Prénom</th>
-                <th>Club / Association</th>
-                <th style="text-align: center;">Tirs</th>
-                <th style="text-align: right; width: 15%;">Moyenne</th>
-            `;
-        } else {
-            tableHeaders.innerHTML = `
-                <th style="width: 8%">Rg</th>
-                <th style="width: 15%">Licence</th>
-                <th>Nom Prénom</th>
-                <th>Club / Association</th>
-                <th style="text-align: right; width: 15%;">Score</th>
-            `;
-        }
+        const sortedStepsKeys = Object.keys(allSteps).sort((a, b) => {
+            return (DEFAULT_ETAPES.find(s => s.key === a)?.order || 0) - (DEFAULT_ETAPES.find(s => s.key === b)?.order || 0);
+        });
 
         tableBody.innerHTML = "";
-        const filteredList = Object.values(shooters).filter(s => normalizeCategoryCode(s.category) === cat);
 
         if (targetStep === "general") {
+            // Classement General dynamique : construction des colonnes d'etapes
+            let headersHTML = `
+                <th style="width: 5%">Rg</th>
+                <th>Nom Prenom</th>
+            `;
+            if (disc === "all") {
+                headersHTML += `<th>Epreuve</th>`;
+            }
+            headersHTML += `<th>Club / Association</th>`;
+            
+            sortedStepsKeys.forEach(stepKey => {
+                headersHTML += `<th style="text-align: center; width: 6%;">${stepKey}</th>`;
+            });
+            headersHTML += `<th style="text-align: right; width: 10%;">Moyenne</th>`;
+            tableHeaders.innerHTML = headersHTML;
+
             const completedStepsKeys = Object.keys(allSteps).filter(k => allSteps[k].status === "completed" || allSteps[k].status === "ongoing");
             const completedCount = completedStepsKeys.length;
 
-            const computed = filteredList.map(s => {
-                let scores = [];
-                completedStepsKeys.forEach(stepKey => {
-                    if (s.results && s.results[stepKey] && s.results[stepKey][disc] !== undefined) {
-                        scores.push(parseFloat(s.results[stepKey][disc]));
+            let list = [];
+            Object.values(shooters).forEach(s => {
+                if (normalizeCategoryCode(s.category) !== cat) return;
+
+                let discsToProcess = (disc === "all") ? [...DISCIPLINES.map(d => d.key), COMBINE.key] : [disc];
+
+                discsToProcess.forEach(dKey => {
+                    let scores = [];
+                    let stepScores = {};
+
+                    sortedStepsKeys.forEach(stepKey => {
+                        if (s.results && s.results[stepKey] && s.results[stepKey][dKey] !== undefined && s.results[stepKey][dKey] !== null) {
+                            const sc = parseFloat(s.results[stepKey][dKey]);
+                            if (!isNaN(sc)) {
+                                scores.push(sc);
+                                stepScores[stepKey] = sc;
+                            }
+                        }
+                    });
+
+                    const participations = scores.length;
+                    if (participations === 0) return; // Ne pas afficher si aucun score n'existe
+
+                    let average = null;
+                    if (completedCount >= 3 && participations < 3) {
+                        average = null; // Non classe (moins de 3 tirs alors qu'au moins 3 etapes ont debute)
+                    } else if (participations > 0) {
+                        const sortedScores = [...scores].sort((a, b) => b - a);
+                        if (completedCount <= 3) {
+                            const sum = sortedScores.reduce((acc, val) => acc + val, 0);
+                            average = (sum / participations).toFixed(2);
+                        } else {
+                            const bestThree = sortedScores.slice(0, 3);
+                            const sum = bestThree.reduce((acc, val) => acc + val, 0);
+                            average = (sum / 3).toFixed(2);
+                        }
                     }
+
+                    list.push({
+                        name: `${s.lastName} ${s.firstName}`,
+                        club: s.club,
+                        disciplineKey: dKey,
+                        stepScores: stepScores,
+                        participations: participations,
+                        average: average
+                    });
                 });
-
-                const participations = scores.length;
-                let average = null;
-
-                if (completedCount >= 3 && participations < 3) {
-                    average = null; 
-                } else if (participations > 0) {
-                    scores.sort((a, b) => b - a);
-                    if (completedCount <= 3) {
-                        const sum = scores.reduce((acc, val) => acc + val, 0);
-                        average = (sum / participations).toFixed(2);
-                    } else {
-                        const bestThree = scores.slice(0, 3);
-                        const sum = bestThree.reduce((acc, val) => acc + val, 0);
-                        average = (sum / 3).toFixed(2);
-                    }
-                }
-
-                return { name: `${s.lastName} ${s.firstName}`, club: s.club, participations: participations, average: average };
             });
 
-            computed.sort((a, b) => {
-                if (a.average === null) return 1;
-                if (b.average === null) return -1;
-                return parseFloat(b.average) - parseFloat(a.average);
+            // Tri : Classés d'abord par moyenne decroissante, puis non-classes par nombre de tirs
+            list.sort((a, b) => {
+                if (a.average === null && b.average !== null) return 1;
+                if (a.average !== null && b.average === null) return -1;
+                if (a.average !== null && b.average !== null) {
+                    return parseFloat(b.average) - parseFloat(a.average);
+                }
+                return b.participations - a.participations;
             });
 
             let rank = 1;
-            computed.forEach(cs => {
+            list.forEach(item => {
                 const tr = document.createElement("tr");
-                const dispRank = cs.average !== null ? rank++ : "-";
-                tr.innerHTML = `
+                const dispRank = item.average !== null ? rank++ : "-";
+                
+                let rowHTML = `
                     <td><strong>${dispRank}</strong></td>
-                    <td>${cs.name}</td>
-                    <td>${cs.club}</td>
-                    <td style="text-align: center;">${cs.participations} / ${completedCount}</td>
-                    <td style="text-align: right;"><strong style="color: var(--primary);">${cs.average !== null ? cs.average : "Non Classé"}</strong></td>
+                    <td style="text-transform: uppercase; font-weight: 600;">${item.name}</td>
                 `;
+                if (disc === "all") {
+                    rowHTML += `<td><span class="badge badge-primary">${disciplineByKey(item.disciplineKey).label}</span></td>`;
+                }
+                rowHTML += `<td>${item.club}</td>`;
+                
+                sortedStepsKeys.forEach(stepKey => {
+                    const sc = item.stepScores[stepKey];
+                    rowHTML += `<td style="text-align: center; color: var(--text-muted);">${sc !== undefined ? sc : "-"}</td>`;
+                });
+
+                rowHTML += `<td style="text-align: right;"><strong style="color: var(--primary);">${item.average !== null ? item.average : "Non Classe"}</strong></td>`;
+                tr.innerHTML = rowHTML;
                 tableBody.appendChild(tr);
             });
 
-            document.getElementById("pdf-subtitle").textContent = "Classement Général Intermédiaire (3 meilleurs scores)";
-            document.getElementById("pdf-meta").textContent = `Discipline : ${disciplineByKey(disc).label} | Catégorie : ${categoryLabel(cat)}`;
+            document.getElementById("pdf-subtitle").textContent = "Classement General Intermediaire (3 meilleures performances)";
+            const discLabel = disc === "all" ? "Toutes les epreuves" : disciplineByKey(disc).label;
+            document.getElementById("pdf-meta").textContent = `Discipline : ${discLabel} | Categorie : ${categoryLabel(cat)}`;
 
         } else {
-            const stepObj = allSteps[targetStep] || {};
-            const computed = filteredList.map(s => {
-                const score = (s.results && s.results[targetStep]) ? s.results[targetStep][disc] : null;
-                return { licence: s.licence, name: `${s.lastName} ${s.firstName}`, club: s.club, score: score !== null ? parseFloat(score) : null };
-            }).filter(cs => cs.score !== null);
+            // Classement d'une Etape specifique
+            let headersHTML = `
+                <th style="width: 8%">Rg</th>
+                <th style="width: 15%">Licence</th>
+                <th>Nom Prenom</th>
+            `;
+            if (disc === "all") {
+                headersHTML += `<th>Epreuve</th>`;
+            }
+            headersHTML += `
+                <th>Club / Association</th>
+                <th style="text-align: right; width: 15%;">Score</th>
+            `;
+            tableHeaders.innerHTML = headersHTML;
 
-            computed.sort((a, b) => b.score - a.score);
+            const stepObj = allSteps[targetStep] || {};
+            let list = [];
+
+            Object.values(shooters).forEach(s => {
+                if (normalizeCategoryCode(s.category) !== cat) return;
+
+                let discsToProcess = (disc === "all") ? [...DISCIPLINES.map(d => d.key), COMBINE.key] : [disc];
+
+                discsToProcess.forEach(dKey => {
+                    const score = (s.results && s.results[targetStep]) ? s.results[targetStep][dKey] : null;
+                    if (score !== null && score !== undefined && !isNaN(parseFloat(score))) {
+                        list.push({
+                            licence: s.licence,
+                            name: `${s.lastName} ${s.firstName}`,
+                            club: s.club,
+                            disciplineKey: dKey,
+                            score: parseFloat(score)
+                        });
+                    }
+                });
+            });
+
+            list.sort((a, b) => b.score - a.score);
 
             let rank = 1;
-            computed.forEach(cs => {
+            list.forEach(item => {
                 const tr = document.createElement("tr");
-                tr.innerHTML = `
+                let rowHTML = `
                     <td><strong>${rank++}</strong></td>
-                    <td>${cs.licence}</td>
-                    <td>${cs.name}</td>
-                    <td>${cs.club}</td>
-                    <td style="text-align: right;"><strong style="color: var(--success);">${cs.score}</strong></td>
+                    <td><code>${item.licence}</code></td>
+                    <td style="text-transform: uppercase; font-weight: 600;">${item.name}</td>
                 `;
+                if (disc === "all") {
+                    rowHTML += `<td><span class="badge badge-primary">${disciplineByKey(item.disciplineKey).label}</span></td>`;
+                }
+                rowHTML += `
+                    <td>${item.club}</td>
+                    <td style="text-align: right;"><strong style="color: var(--success);">${item.score}</strong></td>
+                `;
+                tr.innerHTML = rowHTML;
                 tableBody.appendChild(tr);
             });
 
@@ -168,7 +242,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             document.getElementById("pdf-subtitle").textContent = locationDetails;
-            document.getElementById("pdf-meta").textContent = `Discipline : ${disciplineByKey(disc).label} | Catégorie : ${categoryLabel(cat)}`;
+            const discLabel = disc === "all" ? "Toutes les epreuves" : disciplineByKey(disc).label;
+            document.getElementById("pdf-meta").textContent = `Discipline : ${discLabel} | Categorie : ${categoryLabel(cat)}`;
         }
     }
 

@@ -112,26 +112,41 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (filtered.length === 0) {
-            shootersTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Aucun tireur trouvé.</td></tr>`;
+            shootersTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Aucun tireur trouve en base de données.</td></tr>`;
             return;
         }
 
         filtered.forEach(s => {
-            let resStr = [];
+            let scoresHTML = "";
             if (s.results) {
+                let resultsList = [];
                 Object.entries(s.results).forEach(([stepKey, disciplines]) => {
                     Object.entries(disciplines).forEach(([discKey, score]) => {
-                        resStr.push(`${stepKey}(${discKey}): ${score} pts`);
+                        resultsList.push(`
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; margin-bottom: 4px; font-size: 0.8rem;">
+                                <span style="font-weight: 700; color: var(--primary);">${stepKey}</span>
+                                <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">${discKey}</span>
+                                <span style="font-weight: 700; color: var(--success);">${score} pts</span>
+                            </div>
+                        `);
                     });
                 });
+                scoresHTML = resultsList.join("");
+            } else {
+                scoresHTML = `<span style="font-style: italic; color: var(--text-muted); font-size: 0.85rem;">Aucun score</span>`;
             }
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td><code>${s.licence}</code></td>
-                <td><strong>${s.lastName}</strong> ${s.firstName}</td>
-                <td><span class="badge" style="background: var(--primary-light); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-weight: bold;">${s.category}</span></td>
+                <td><strong style="text-transform: uppercase;">${s.lastName}</strong> ${s.firstName}</td>
+                <td><span class="badge badge-primary">${s.category}</span></td>
                 <td>${s.club}</td>
-                <td style="font-size: 0.85rem; color: var(--text-muted);">${resStr.join(" | ") || 'Aucun score'}</td>
+                <td>
+                    <div style="max-height: 120px; overflow-y: auto; padding-right: 4px;">
+                        ${scoresHTML}
+                    </div>
+                </td>
             `;
             shootersTableBody.appendChild(tr);
         });

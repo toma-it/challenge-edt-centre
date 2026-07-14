@@ -97,25 +97,25 @@
             </div>
         </div>
 
-        <!-- NOUVEAU : Visualisation et contrôle des tireurs rajoutés -->
+        <!-- Liste de controle des Tireurs enregistres en Base -->
         <div class="card" style="cursor: default; margin-top: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3>👥 Liste de contrôle des Tireurs enregistrés en Base</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <h3>Liste de controle des Tireurs enregistres en Base</h3>
                 <input type="text" id="search-shooter" placeholder="Rechercher un nom ou une licence..." style="padding: 0.5rem 1rem; width: 300px; border-radius: 8px; border: 1px solid var(--border-color);">
             </div>
-            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+            <div class="table-container" style="max-height: 500px; overflow-y: auto;">
                 <table>
                     <thead>
                         <tr>
-                            <th>Licence</th>
-                            <th>Nom Prénom</th>
-                            <th>Catégorie Stockée</th>
-                            <th>Club / Association</th>
-                            <th>Scores enregistrés (Étape : Score)</th>
+                            <th style="width: 12%;">Licence</th>
+                            <th style="width: 25%;">Nom Prénom</th>
+                            <th style="width: 13%;">Catégorie</th>
+                            <th style="width: 25%;">Club / Association</th>
+                            <th style="width: 25%;">Scores Enregistrés (Etape / Discipline / Score)</th>
                         </tr>
                     </thead>
                     <tbody id="shooters-table-body">
-                        <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Aucun tireur en base de données.</td></tr>
+                        <!-- Généré par JS -->
                     </tbody>
                 </table>
             </div>

@@ -3,73 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classements & Palmarès - Challenge EDT 10.9</title>
+    <title>Palmares - Challenge EDT 10.9</title>
     <link rel="stylesheet" href="assets/css/styles.css">
-    <!-- SDK Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <!-- Outil d'export PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-    <header class="no-print">
-        <h1>La relève au <span>10.9</span></h1>
+    <header>
+        <h1>Challenge EDT - <span>La releve au 10.9</span></h1>
         <nav>
             <a href="index.html">Accueil</a>
             <a href="palmares.html" class="active">Classements</a>
-            <a href="direct.html">Écran Live</a>
-            <a href="admin.html">Administration</a>
+            <a href="admin.html">Admin</a>
         </nav>
     </header>
 
     <div class="container">
-        <!-- Barre de Filtres générée dynamiquement -->
-        <div class="filter-bar no-print">
-            <div class="form-group">
-                <label for="filter-discipline">Discipline</label>
-                <select id="filter-discipline">
-                    <!-- Rempli dynamiquement par config.js -->
-                </select>
+        <div class="card">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="filter-step">Etape selectionnee</label>
+                    <select id="filter-step"></select>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="filter-discipline">Epreuve</label>
+                    <select id="filter-discipline">
+                        <option value="all">Toutes les epreuves</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="filter-category">Categorie</label>
+                    <select id="filter-category"></select>
+                </div>
+                <button class="btn btn-primary" id="btn-pdf" style="height: 42px; margin-bottom: 1rem;">Exporter en PDF</button>
             </div>
-            <div class="form-group">
-                <label for="filter-category">Catégorie d'âge</label>
-                <select id="filter-category">
-                    <!-- Rempli dynamiquement par config.js -->
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="filter-step">Événement / Étape</label>
-                <select id="filter-step">
-                    <!-- Rempli dynamiquement par la base de données -->
-                </select>
-            </div>
-            <button class="btn btn-accent" id="btn-pdf">📥 Télécharger PDF</button>
         </div>
 
-        <!-- Zone d'impression du Palmarès -->
-        <div id="palmares-print-zone" style="background: white; padding: 25px; border-radius: 8px;">
-            <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 15px;">
-                <h2 id="pdf-main-title" style="color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; text-transform: uppercase;">Challenge Régional des Écoles de Tir</h2>
-                <h3 id="pdf-subtitle" style="color: var(--accent); font-weight: 700; font-size: 1.3rem;">Classement</h3>
-                <p id="pdf-meta" style="font-size: 0.95rem; color: var(--text-muted); margin-top: 5px; font-weight: 500;">Discipline & Catégorie</p>
+        <div class="card" id="palmares-print-zone" style="padding: 2rem;">
+            <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem;">
+                <h2 style="color: var(--primary); font-size: 1.6rem; margin-bottom: 0.25rem; font-weight: 800;">CHALLENGE ECOLE DE TIR 10.9</h2>
+                <h3 id="pdf-subtitle" style="color: var(--accent); font-weight: 600; font-size: 1.15rem; margin-bottom: 0.5rem;">Etape</h3>
+                <div id="pdf-meta" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Discipline | Categorie</div>
             </div>
 
             <div class="table-container">
-                <table id="palmares-table">
+                <table>
                     <thead>
                         <tr id="table-headers">
-                            <!-- En-têtes dynamiques -->
+                            <!-- Genere dynamiquement -->
                         </tr>
                     </thead>
                     <tbody id="table-body">
-                        <!-- Lignes dynamiques -->
+                        <!-- Genere dynamiquement -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Scripts de fonctionnement -->
     <script src="assets/js/config.js"></script>
     <script src="assets/js/palmares.js"></script>
 </body>
