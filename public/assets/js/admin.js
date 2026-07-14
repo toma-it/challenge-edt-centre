@@ -8,13 +8,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const emailInput = document.getElementById("admin-email");
     const passwordInput = document.getElementById("admin-password");
 
-    const stepsStatusList = document.getElementById("steps-status-list");
+    const stepsTableBody = document.getElementById("steps-table-body");
     const importStepSelect = document.getElementById("import-step-select");
+    const shootersTableBody = document.getElementById("shooters-table-body");
+    const searchShooter = document.getElementById("search-shooter");
 
     const csvDropzone = document.getElementById("csv-dropzone");
     const csvFileInput = document.getElementById("csv-file-input");
 
-    // 1. Détection de l'état de connexion de l'admin
+    let globalShooters = {};
+
     auth.onAuthStateChanged((user) => {
         if (user) {
             loginZone.style.display = "none";
@@ -27,158 +30,159 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     btnLogin.addEventListener("click", () => {
-        auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value)
-            .catch(err => alert("Erreur d'accès : " + err.message));
+        auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value).catch(err => alert(err.message));
     });
 
-    btnLogout.addEventListener("click", () => {
-        auth.signOut();
-    });
+    btnLogout.addEventListener("click", () => auth.signOut());
 
-    // 2. Gestion et Initialisation automatique de la base
     function loadAdminDashboard() {
         db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
             const data = snapshot.val();
             
-            // Si la base de données est vierge, on l'initialise avec config.js
+            // Si la base est neuve, initialisation complète depuis config.js
             if (!data || !data.steps) {
                 const initialSteps = {};
                 DEFAULT_ETAPES.forEach(s => {
-                    initialSteps[s.key] = {
-                        name: s.name,
-                        status: "upcoming"
-                    };
+                    initialSteps[s.key] = { name: s.name, status: "upcoming", date: "", lieu: "" };
                 });
                 db.ref(`${ROOT}/${activeSeason}/steps`).set(initialSteps);
                 return;
             }
 
-            renderStepsControl(data.steps);
-            renderStepImportDropdown(data.steps);
+            globalShooters = data.shooters || {};
+            renderStepsTable(data.steps);
+            renderImportDropdown(data.steps);
+            renderShootersTable(globalShooters);
         });
     }
 
-    function renderStepsControl(steps) {
-        stepsStatusList.innerHTML = "";
-        
-        // Tri selon l'ordre configuré
+    function renderStepsTable(steps) {
+        stepsTableBody.innerHTML = "";
         const sorted = Object.entries(steps).sort((a, b) => {
-            const stepA = DEFAULT_ETAPES.find(s => s.key === a[0]);
-            const stepB = DEFAULT_ETAPES.find(s => s.key === b[0]);
-            return (stepA?.order || 0) - (stepB?.order || 0);
+            return (DEFAULT_ETAPES.find(s => s.key === a[0])?.order || 0) - (DEFAULT_ETAPES.find(s => s.key === b[0])?.order || 0);
         });
 
         sorted.forEach(([key, val]) => {
-            const div = document.createElement("div");
-            div.style.display = "flex";
-            div.style.justifyContent = "space-between";
-            div.style.alignItems = "center";
-            div.style.padding = "10px 0";
-            div.style.borderBottom = "1px solid var(--border-color)";
-
-            div.innerHTML = `
-                <span style="font-weight: 600; font-size: 0.95rem;">${val.name}</span>
-                <select data-key="${key}" class="step-status-modifier">
-                    <option value="upcoming" ${val.status === 'upcoming' ? 'selected' : ''}>À venir</option>
-                    <option value="ongoing" ${val.status === 'ongoing' ? 'selected' : ''}>En cours</option>
-                    <option value="completed" ${val.status === 'completed' ? 'selected' : ''}>Terminée</option>
-                </select>
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>${val.name}</strong></td>
+                <td><input type="text" class="step-date-input" data-key="${key}" value="${val.date || ''}" placeholder="Ex: 14/11/2026" style="width:110px; padding:4px;"></td>
+                <td><input type="text" class="step-lieu-input" data-key="${key}" value="${val.lieu || ''}" placeholder="Club d'accueil" style="width:100%; padding:4px;"></td>
+                <td>
+                    <select class="step-status-select" data-key="${key}">
+                        <option value="upcoming" ${val.status === 'upcoming' ? 'selected' : ''}>À venir</option>
+                        <option value="ongoing" ${val.status === 'ongoing' ? 'selected' : ''}>En cours</option>
+                        <option value="completed" ${val.status === 'completed' ? 'selected' : ''}>Terminée</option>
+                    </select>
+                </td>
             `;
-            stepsStatusList.appendChild(div);
+            stepsTableBody.appendChild(tr);
         });
 
-        document.querySelectorAll(".step-status-modifier").forEach(sel => {
-            sel.addEventListener("change", (e) => {
-                const key = e.target.getAttribute("data-key");
-                const newStatus = e.target.value;
-                db.ref(`${ROOT}/${activeSeason}/steps/${key}/status`).set(newStatus);
-            });
-        });
+        // Événements d'enregistrement en direct
+        document.querySelectorAll(".step-date-input").forEach(i => i.addEventListener("change", e => {
+            db.ref(`${ROOT}/${activeSeason}/steps/${e.target.dataset.key}/date`).set(e.target.value);
+        }));
+        document.querySelectorAll(".step-lieu-input").forEach(i => i.addEventListener("change", e => {
+            db.ref(`${ROOT}/${activeSeason}/steps/${e.target.dataset.key}/lieu`).set(e.target.value);
+        }));
+        document.querySelectorAll(".step-status-select").forEach(s => s.addEventListener("change", e => {
+            db.ref(`${ROOT}/${activeSeason}/steps/${e.target.dataset.key}/status`).set(e.target.value);
+        }));
     }
 
-    function renderStepImportDropdown(steps) {
-        const currentVal = importStepSelect.value;
+    function renderImportDropdown(steps) {
+        const current = importStepSelect.value;
         importStepSelect.innerHTML = "";
-
-        const sorted = Object.entries(steps).sort((a, b) => {
-            const stepA = DEFAULT_ETAPES.find(s => s.key === a[0]);
-            const stepB = DEFAULT_ETAPES.find(s => s.key === b[0]);
-            return (stepA?.order || 0) - (stepB?.order || 0);
-        });
-
-        sorted.forEach(([key, val]) => {
+        Object.entries(steps).forEach(([k, v]) => {
             const opt = document.createElement("option");
-            opt.value = key;
-            opt.textContent = val.name;
+            opt.value = k; opt.textContent = v.name;
             importStepSelect.appendChild(opt);
         });
-
-        if (currentVal) importStepSelect.value = currentVal;
+        if (current) importStepSelect.value = current;
     }
 
-    // 3. Import des données CSV d'ISISWEB avec détection automatique
-    csvDropzone.addEventListener("click", () => csvFileInput.click());
+    function renderShootersTable(shooters, filterText = "") {
+        shootersTableBody.innerHTML = "";
+        const list = Object.values(shooters);
+        
+        const filtered = list.filter(s => {
+            const search = filterText.toLowerCase();
+            return s.lastName?.toLowerCase().includes(search) || s.firstName?.toLowerCase().includes(search) || s.licence?.includes(search);
+        });
 
-    csvFileInput.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (file) handleCSVParse(file);
-    });
-
-    function handleCSVParse(file) {
-        const stepKey = importStepSelect.value;
-        if (!stepKey) {
-            alert("Veuillez sélectionner une étape cible avant l'import.");
+        if (filtered.length === 0) {
+            shootersTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Aucun tireur trouvé.</td></tr>`;
             return;
         }
 
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                const rows = results.data;
-                let updates = {};
-                let recordsCount = 0;
-
-                rows.forEach(row => {
-                    const licence = row['Licence']?.trim();
-                    const epreuveRaw = row['Epreuve']?.trim();
-                    const score = parseFloat(row['Total Séries']);
-
-                    if (!licence || isNaN(score)) return;
-
-                    // Détection dynamique de la discipline via config.js
-                    const discipline = detectDiscipline(epreuveRaw);
-                    if (!discipline) return; // Ignore les autres épreuves (ex: Arbalète)
-
-                    const catCode = normalizeCategoryCode(row['Catégorie E']);
-                    const basePath = `${ROOT}/${activeSeason}/shooters/licence_${licence}`;
-
-                    updates[`${basePath}/licence`] = licence;
-                    updates[`${basePath}/lastName`] = row['Nom']?.trim().toUpperCase();
-                    updates[`${basePath}/firstName`] = row['Prenom']?.trim();
-                    updates[`${basePath}/club`] = row['Association Nom']?.trim();
-                    updates[`${basePath}/category`] = catCode;
-                    updates[`${basePath}/results/${stepKey}/${discipline.key}`] = score;
-
-                    recordsCount++;
+        filtered.forEach(s => {
+            let resStr = [];
+            if (s.results) {
+                Object.entries(s.results).forEach(([stepKey, disciplines]) => {
+                    Object.entries(disciplines).forEach(([discKey, score]) => {
+                        resStr.push(`${stepKey}(${discKey}): ${score} pts`);
+                    });
                 });
-
-                if (recordsCount > 0) {
-                    db.ref().update(updates)
-                        .then(() => alert(`Importation réussie : ${recordsCount} scores enregistrés !`))
-                        .catch(err => alert("Erreur d'écriture : " + err.message));
-                } else {
-                    alert("Aucune épreuve de tir correspondante au challenge n'a été détectée dans ce fichier.");
-                }
             }
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><code>${s.licence}</code></td>
+                <td><strong>${s.lastName}</strong> ${s.firstName}</td>
+                <td><span class="badge" style="background: var(--primary-light); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-weight: bold;">${s.category}</span></td>
+                <td>${s.club}</td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">${resStr.join(" | ") || 'Aucun score'}</td>
+            `;
+            shootersTableBody.appendChild(tr);
         });
     }
 
+    searchShooter.addEventListener("input", (e) => renderShootersTable(globalShooters, e.target.value));
+
+    // Import CSV
+    csvDropzone.addEventListener("click", () => csvFileInput.click());
+    csvFileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const stepKey = importStepSelect.value;
+            Papa.parse(file, {
+                header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    let updates = {}; let count = 0;
+                    results.data.forEach(row => {
+                        const licence = row['Licence']?.trim();
+                        const epreuveRaw = row['Epreuve']?.trim();
+                        const score = parseFloat(row['Total Séries']);
+                        if (!licence || isNaN(score)) return;
+
+                        const discipline = detectDiscipline(epreuveRaw);
+                        if (!discipline) return;
+
+                        const catCode = normalizeCategoryCode(row['Catégorie E']);
+                        const basePath = `${ROOT}/${activeSeason}/shooters/licence_${licence}`;
+
+                        updates[`${basePath}/licence`] = licence;
+                        updates[`${basePath}/lastName`] = row['Nom']?.trim().toUpperCase();
+                        updates[`${basePath}/firstName`] = row['Prenom']?.trim();
+                        updates[`${basePath}/club`] = row['Association Nom']?.trim();
+                        updates[`${basePath}/category`] = catCode;
+                        updates[`${basePath}/results/${stepKey}/${discipline.key}`] = score;
+                        count++;
+                    });
+
+                    if (count > 0) {
+                        db.ref().update(updates).then(() => alert(`Importation réussie : ${count} fiches traitées.`));
+                    } else {
+                        alert("Erreur : Aucun score valide trouvé pour le challenge dans ce fichier.");
+                    }
+                }
+            });
+        }
+    });
+
     btnReset.addEventListener("click", () => {
-        if (confirm("Supprimer l'intégralité des résultats et tireurs de cette saison ? Action définitive !")) {
-            db.ref(`${ROOT}/${activeSeason}/shooters`).remove()
-                .then(() => alert("Données des tireurs réinitialisées."))
-                .catch(err => alert("Erreur : " + err.message));
+        if (confirm("Vider complètement la liste des tireurs ?")) {
+            db.ref(`${ROOT}/${activeSeason}/shooters`).remove();
         }
     });
 });

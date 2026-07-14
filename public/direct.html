@@ -3,109 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Affichage Live TV - Challenge EDT 10.9</title>
+    <title>Affichage Live - Challenge EDT 10.9</title>
     <link rel="stylesheet" href="assets/css/styles.css">
-    <!-- SDK Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         body {
-            background-color: #0c1a30;
-            color: white;
+            background-color: var(--bg-main);
             overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         header {
-            background-color: #060e1b;
+            background-color: var(--primary);
+            padding: 1rem 2rem;
+            height: 90px;
         }
-        .live-card {
-            background-color: #142544;
-            border: 2px solid #1e3a6c;
+        .live-container {
+            flex: 1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .live-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1rem 2rem;
             border-radius: 12px;
-            padding: 2rem;
-            margin-top: 1rem;
-            height: calc(100vh - 120px);
-            overflow: hidden;
-            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
         }
-        .scrollable-tbody {
-            display: block;
-            max-height: calc(100vh - 280px);
-            overflow-y: hidden;
+        .live-table-card {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         table {
-            display: table;
+            width: 100%;
+            border-collapse: collapse;
         }
         th {
-            background-color: #1e3a6c;
-            color: #ffaa00;
+            font-size: 1.2rem;
+            padding: 1.2rem;
+            background-color: var(--primary-light);
+            color: var(--primary);
         }
         td {
-            border-bottom: 1px solid #1e3a6c;
-            font-size: 1.25rem;
+            font-size: 1.6rem; /* Police très grande pour lecture éloignée */
+            padding: 1.2rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
         }
-        tr:nth-child(even) {
-            background-color: #1a2d52;
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        .rank-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 8px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>DIRECT TV : Challenge Écoles de Tir <span>La relève au 10.9</span></h1>
-        <div id="live-step-badge" style="background-color: var(--accent); color: black; font-weight: bold; padding: 5px 15px; border-radius: 20px;">Chargement...</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h1 style="font-size: 1.8rem;">CHALLENGE EDT <span>La relève au 10.9</span></h1>
+            <div id="live-step-details" style="text-align: right; color: white; font-size: 1.1rem; font-weight: 500;">
+                <span id="live-step-name" style="background: var(--accent); color: var(--text-dark); padding: 6px 16px; border-radius: 20px; font-weight: 700; margin-right: 10px;">Chargement...</span>
+                <span id="live-step-meta" style="color: #eaf2f9;"></span>
+            </div>
+        </div>
     </header>
 
-    <div class="container" style="max-width: 100%;">
-        <div class="live-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 id="live-discipline" style="color: #4da3ff; font-size: 2rem;">Discipline</h2>
-                <h2 id="live-category" style="color: var(--accent); font-size: 2.2rem;">Catégorie d'âge</h2>
-            </div>
+    <div class="live-container">
+        <div class="live-header-info">
+            <h2 id="live-discipline" style="color: var(--primary); font-size: 2rem; font-weight: 800;">Discipline</h2>
+            <h2 id="live-category" style="color: var(--accent); font-size: 2.2rem; font-weight: 800; background: #fff8eb; padding: 4px 16px; border-radius: 8px; border: 1px solid #fbe5c2;">Catégorie</h2>
+        </div>
 
-            <table style="width: 100%;">
+        <div class="live-table-card">
+            <table>
                 <thead>
                     <tr>
-                        <th style="width: 10%;">Rg</th>
-                        <th style="width: 45%;">Nom Prénom</th>
-                        <th style="width: 30%;">Club / Association</th>
-                        <th style="width: 15%; text-align: right;">Score</th>
+                        <th style="width: 10%; text-align: center;">Place</th>
+                        <th style="width: 50%; text-align: left;">Nom Prénom</th>
+                        <th style="width: 25%; text-align: left;">Club / Association</th>
+                        <th style="width: 15%; text-align: right; padding-right: 2rem;">Score Total</th>
                     </tr>
                 </thead>
-                <tbody id="live-table-body" class="scrollable-tbody">
-                    <!-- Données en direct -->
+                <tbody id="live-table-body">
+                    <!-- Rempli automatiquement -->
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Chargement de config.js en premier -->
     <script src="assets/js/config.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            // Liste dynamique construite à partir de config.js !
             const categoriesCodes = CATEGORIES.map(c => c.code);
             const disciplinesKeys = [...DISCIPLINES.map(d => d.key), COMBINE.key];
 
             let catIndex = 0;
             let discIndex = 0;
-
             let currentStepKey = "";
             let shooters = {};
 
-            // Écouter les données en direct
             db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (!data) return;
 
                 shooters = data.shooters || {};
                 const steps = data.steps || {};
-                
-                // On cible l'étape en cours ("ongoing"), ou à défaut la dernière terminée ("completed")
+
+                // Cible l'étape marquée "En cours" (ongoing), sinon la dernière "Terminée"
                 const activeStep = Object.entries(steps).find(([k, v]) => v.status === "ongoing") || 
-                                   Object.entries(steps).reverse().find(([k, v]) => v.status === "completed");
+                                   Object.entries(steps).reverse().find(([k, v]) => v.status === "completed") ||
+                                   Object.entries(steps)[0];
                 
                 if (activeStep) {
                     currentStepKey = activeStep[0];
-                    document.getElementById("live-step-badge").textContent = activeStep[1].name;
+                    document.getElementById("live-step-name").textContent = activeStep[1].name;
+                    
+                    let metaStr = "";
+                    if(activeStep[1].lieu) metaStr += `📍 ${activeStep[1].lieu}`;
+                    if(activeStep[1].date) metaStr += `  📅 ${activeStep[1].date}`;
+                    document.getElementById("live-step-meta").textContent = metaStr;
                 }
                 
                 displayNextRotation();
@@ -117,15 +151,12 @@
                 const discKey = disciplinesKeys[discIndex];
                 const catCode = categoriesCodes[catIndex];
 
-                const disciplineObj = disciplineByKey(discKey);
-
-                document.getElementById("live-discipline").textContent = disciplineObj.label;
+                document.getElementById("live-discipline").textContent = disciplineByKey(discKey).label;
                 document.getElementById("live-category").textContent = categoryLabel(catCode);
 
                 const tbody = document.getElementById("live-table-body");
                 tbody.innerHTML = "";
 
-                // Extraction des tireurs correspondants
                 const activeList = Object.values(shooters)
                     .filter(s => normalizeCategoryCode(s.category) === catCode)
                     .map(s => {
@@ -136,22 +167,22 @@
                     .sort((a, b) => b.score - a.score);
 
                 if (activeList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 30px; font-style: italic; color: #64748b;">Aucun tireur classé pour le moment</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 4rem; color: var(--text-muted); font-style: italic; font-size: 1.4rem;">Aucun tir enregistré dans cette catégorie</td></tr>`;
                 } else {
                     let rank = 1;
-                    activeList.forEach(item => {
+                    activeList.slice(0, 8).forEach(item => { // Affiche le top 8 pour garantir l'absence d'ascenseur sur l'écran
                         const tr = document.createElement("tr");
                         tr.innerHTML = `
-                            <td style="width: 10%;"><strong>${rank++}</strong></td>
-                            <td style="width: 45%;">${item.name}</td>
-                            <td style="width: 30%;">${item.club}</td>
-                            <td style="width: 15%; text-align: right; color: var(--accent);"><strong>${item.score}</strong></td>
+                            <td style="text-align: center;"><span class="rank-badge">${rank++}</span></td>
+                            <td style="color: var(--text-dark); text-transform: uppercase;">${item.name}</td>
+                            <td style="color: var(--text-muted); font-size: 1.4rem;">${item.club}</td>
+                            <td style="text-align: right; padding-right: 2rem; color: var(--success); font-size: 1.8rem;"><strong>${item.score}</strong></td>
                         `;
                         tbody.appendChild(tr);
                     });
                 }
 
-                // Préparation du cycle de rotation suivant
+                // Cycle de rotation
                 catIndex++;
                 if (catIndex >= categoriesCodes.length) {
                     catIndex = 0;
@@ -159,8 +190,8 @@
                 }
             }
 
-            // Déclenchement de la rotation d'affichage toutes les 15 secondes
-            setInterval(displayNextRotation, 15000);
+            // Changement d'affichage cyclique toutes les 12 secondes
+            setInterval(displayNextRotation, 12000);
         });
     </script>
 </body>

@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let allSteps = {};
     let shooters = {};
 
-    // 1. Initialiser les sélecteurs HTML à partir de CONFIG.JS
     function initFiltersFromConfig() {
         filterDiscipline.innerHTML = "";
         DISCIPLINES.forEach(d => {
@@ -23,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initFiltersFromConfig();
 
-    // 2. Synchronisation avec Firebase
     db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
@@ -39,11 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentVal = filterStep.value;
         filterStep.innerHTML = "";
 
-        // Récupérer les étapes de la base triées par ordre chronologique
         const sortedSteps = Object.entries(allSteps).sort((a, b) => {
-            const stepA = DEFAULT_ETAPES.find(s => s.key === a[0]);
-            const stepB = DEFAULT_ETAPES.find(s => s.key === b[0]);
-            return (stepA?.order || 0) - (stepB?.order || 0);
+            return (DEFAULT_ETAPES.find(s => s.key === a[0])?.order || 0) - (DEFAULT_ETAPES.find(s => s.key === b[0])?.order || 0);
         });
 
         sortedSteps.forEach(([key, step]) => {
@@ -61,7 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentVal) filterStep.value = currentVal;
     }
 
-    // 3. Calculs et Affichage des Tableaux
     function renderRankings() {
         const disc = filterDiscipline.value;
         const cat = filterCategory.value;
@@ -92,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const filteredList = Object.values(shooters).filter(s => normalizeCategoryCode(s.category) === cat);
 
         if (targetStep === "general") {
-            // Moyenne générale dynamique
             const completedStepsKeys = Object.keys(allSteps).filter(k => allSteps[k].status === "completed" || allSteps[k].status === "ongoing");
             const completedCount = completedStepsKeys.length;
 
@@ -108,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let average = null;
 
                 if (completedCount >= 3 && participations < 3) {
-                    average = null; // Disqualifié du classement général (moins de 3 participations)
+                    average = null; 
                 } else if (participations > 0) {
                     scores.sort((a, b) => b - a);
                     if (completedCount <= 3) {
@@ -121,15 +114,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                return {
-                    name: `${s.lastName} ${s.firstName}`,
-                    club: s.club,
-                    participations: participations,
-                    average: average
-                };
+                return { name: `${s.lastName} ${s.firstName}`, club: s.club, participations: participations, average: average };
             });
 
-            // Tri par moyenne descendante
             computed.sort((a, b) => {
                 if (a.average === null) return 1;
                 if (b.average === null) return -1;
@@ -150,21 +137,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 tableBody.appendChild(tr);
             });
 
-            document.getElementById("pdf-subtitle").textContent = "Classement Général (Moyennes des 3 meilleures étapes)";
+            document.getElementById("pdf-subtitle").textContent = "Classement Général Intermédiaire (3 meilleurs scores)";
             document.getElementById("pdf-meta").textContent = `Discipline : ${disciplineByKey(disc).label} | Catégorie : ${categoryLabel(cat)}`;
 
         } else {
-            // Classement d'étape simple
-            const stepName = allSteps[targetStep]?.name || targetStep;
-            
+            const stepObj = allSteps[targetStep] || {};
             const computed = filteredList.map(s => {
                 const score = (s.results && s.results[targetStep]) ? s.results[targetStep][disc] : null;
-                return {
-                    licence: s.licence,
-                    name: `${s.lastName} ${s.firstName}`,
-                    club: s.club,
-                    score: score !== undefined ? parseFloat(score) : null
-                };
+                return { licence: s.licence, name: `${s.lastName} ${s.firstName}`, club: s.club, score: score !== null ? parseFloat(score) : null };
             }).filter(cs => cs.score !== null);
 
             computed.sort((a, b) => b.score - a.score);
@@ -182,7 +162,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 tableBody.appendChild(tr);
             });
 
-            document.getElementById("pdf-subtitle").textContent = `${stepName}`;
+            let locationDetails = stepObj.name || targetStep;
+            if (stepObj.lieu || stepObj.date) {
+                locationDetails += ` (${stepObj.lieu || ''} - ${stepObj.date || ''})`;
+            }
+
+            document.getElementById("pdf-subtitle").textContent = locationDetails;
             document.getElementById("pdf-meta").textContent = `Discipline : ${disciplineByKey(disc).label} | Catégorie : ${categoryLabel(cat)}`;
         }
     }
@@ -191,20 +176,12 @@ document.addEventListener("DOMContentLoaded", () => {
     filterCategory.addEventListener("change", renderRankings);
     filterStep.addEventListener("change", renderRankings);
 
-    // 4. Génération PDF
     btnPDF.addEventListener("click", () => {
         const element = document.getElementById("palmares-print-zone");
-        const filename = `EDT109_${filterStep.value}_${filterCategory.value}_${filterDiscipline.value}.pdf`;
-
-        const opt = {
-            margin: [10, 10, 15, 10],
-            filename: filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
-
-        html2pdf().set(opt).from(element).save();
+        const filename = `EDT109_${filterStep.value}_${filterCategory.value}.pdf`;
+        html2pdf().set({
+            margin: [10, 10, 15, 10], filename: filename, image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(element).save();
     });
 });

@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Espace Admin - Challenge EDT 10.9</title>
     <link rel="stylesheet" href="assets/css/styles.css">
-    <!-- SDK Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <!-- Parseur de fichiers CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
@@ -22,7 +20,7 @@
         </nav>
     </header>
 
-    <!-- Formulaire d'authentification -->
+    <!-- Écran de Connexion -->
     <div id="login-zone" class="auth-card">
         <h2 style="margin-bottom: 1.5rem; text-align: center;">Connexion Sécurisée</h2>
         <div class="form-group" style="margin-bottom: 1rem;">
@@ -36,56 +34,94 @@
         <button class="btn btn-accent" style="width: 100%;" id="btn-login">Se Connecter</button>
     </div>
 
-    <!-- Écran principal Admin -->
+    <!-- Interface d'Administration Principale -->
     <div id="admin-panel" class="container" style="display: none;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; align-items: center;">
-            <h2>Tableau de bord - Administration</h2>
+            <h2>Tableau de bord - Configuration & Imports</h2>
             <button class="btn btn-danger" id="btn-logout">Se Déconnecter</button>
         </div>
 
-        <div class="admin-grid">
-            <!-- État des Épreuves -->
-            <div class="card" style="cursor: default;">
-                <h3>⚙️ Statuts des Étapes</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-                    Configurez l'état actuel de chaque événement du challenge.
-                </p>
-                <div id="steps-status-list">
-                    <!-- Généré dynamiquement -->
-                </div>
-            </div>
-
-            <!-- Traitement CSV ISISWEB -->
+        <div class="admin-grid" style="grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <!-- Importateur de Résultats -->
             <div class="card" style="cursor: default;">
                 <h3>📤 Importateur de Résultats ISISWEB (CSV)</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-                    Glissez le fichier exporté depuis ISISWEB pour intégrer automatiquement les scores.
+                    Sélectionnez l'épreuve de destination puis glissez votre fichier d'export fédéral.
                 </p>
-
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="import-step-select">Étape de destination</label>
-                    <select id="import-step-select">
-                        <!-- Généré dynamiquement -->
-                    </select>
+                <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                    <div class="form-group" style="max-width: 300px;">
+                        <label for="import-step-select">Étape cible de l'import</label>
+                        <select id="import-step-select"></select>
+                    </div>
+                    <div class="dropzone" id="csv-dropzone" style="flex: 1; margin-top: 0; padding: 1.5rem;">
+                        <p>Cliquez ou déposez le fichier CSV ISISWEB ici</p>
+                        <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+                    </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="dropzone" id="csv-dropzone">
-                    <p>Cliquez ou glissez-déposez le fichier CSV d'ISISWEB ici</p>
-                    <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+        <div class="admin-grid" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem;">
+            <!-- Configuration détaillée des étapes -->
+            <div class="card" style="cursor: default;">
+                <h3>⚙️ Calendrier et Statuts des Étapes</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                    Modifiez les dates, les clubs d'accueil (Lieux) et l'état d'avancement. Tout s'enregistre en temps réel.
+                </p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Étape</th>
+                                <th>Date</th>
+                                <th>Lieu / Club d'accueil</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="steps-table-body">
+                            <!-- Lignes générées dynamiquement -->
+                        </tbody>
+                    </table>
                 </div>
-                
-                <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                    <h3 style="color: var(--danger);">⚠️ Zone de danger</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-                        Effacer la saison active videra tous les scores des tireurs.
+            </div>
+
+            <!-- Zone de Danger / Reset -->
+            <div class="card" style="cursor: default; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h3 style="color: var(--danger);">⚠️ Zone de maintenance</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        Permet de purger l'intégralité des tireurs de la base de données pour préparer une nouvelle saison ou corriger un import global erroné.
                     </p>
-                    <button class="btn btn-danger" id="btn-reset">⚠️ Réinitialiser la Saison active</button>
                 </div>
+                <button class="btn btn-danger" id="btn-reset" style="margin-top: 2rem; width: 100%;">⚠️ Réinitialiser tous les Tireurs & Scores</button>
+            </div>
+        </div>
+
+        <!-- NOUVEAU : Visualisation et contrôle des tireurs rajoutés -->
+        <div class="card" style="cursor: default; margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>👥 Liste de contrôle des Tireurs enregistrés en Base</h3>
+                <input type="text" id="search-shooter" placeholder="Rechercher un nom ou une licence..." style="padding: 0.5rem 1rem; width: 300px; border-radius: 8px; border: 1px solid var(--border-color);">
+            </div>
+            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Licence</th>
+                            <th>Nom Prénom</th>
+                            <th>Catégorie Stockée</th>
+                            <th>Club / Association</th>
+                            <th>Scores enregistrés (Étape : Score)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shooters-table-body">
+                        <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Aucun tireur en base de données.</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- Chargement de config.js en premier -->
     <script src="assets/js/config.js"></script>
     <script src="assets/js/admin.js"></script>
 </body>

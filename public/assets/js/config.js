@@ -29,9 +29,14 @@ const CONFIG = {
 };
 
 // ─── Initialisation Firebase (ne rien modifier en dessous) ───────────────
-firebase.initializeApp(CONFIG.firebase);
-const db = firebase.database();
-const auth = firebase.auth();
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp(CONFIG.firebase);
+}
+
+// On n'initialise les services que s'ils sont chargés dans le HTML
+const db = (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : null;
+const auth = (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') ? firebase.auth() : null;
+
 const ROOT = 'seasons';
 const activeSeason = "2026_2027";
 
