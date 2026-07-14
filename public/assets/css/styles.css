@@ -25,6 +25,7 @@ body {
     line-height: 1.5;
 }
 
+/* En-tête */
 header {
     background-color: var(--primary);
     color: white;
@@ -83,6 +84,73 @@ header nav a:hover, header nav a.active {
     padding: 0 1.5rem;
 }
 
+/* Structure de la Page d'Accueil (index.html) */
+.hero {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background-color: var(--primary);
+    color: white;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    border-bottom: 4px solid var(--primary-light);
+}
+
+.hero h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.hero p {
+    color: #eaf2f9;
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.home-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2.25rem 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+}
+
+.home-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(4, 34, 71, 0.06);
+    border-color: var(--accent);
+}
+
+.home-card h3 {
+    color: var(--primary);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.home-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+/* Éléments de l'interface d'administration et formulaires */
 .card {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -129,12 +197,12 @@ input:focus, select:focus {
     border-color: var(--accent);
 }
 
+/* Style général des tableaux sur le site */
 .table-container {
     overflow-x: auto;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: var(--card-bg);
-    margin-bottom: 2rem;
 }
 
 table {
@@ -167,6 +235,7 @@ tr:nth-child(even) td {
     background-color: rgba(141, 175, 216, 0.04);
 }
 
+/* Badges */
 .badge {
     display: inline-block;
     padding: 0.25rem 0.5rem;
@@ -186,17 +255,6 @@ tr:nth-child(even) td {
     color: var(--success);
 }
 
-.dropzone {
-    border: 2px dashed var(--primary-light);
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    background-color: var(--bg-main);
-    cursor: pointer;
-    color: var(--primary);
-    font-weight: 600;
-}
-
 .btn {
     display: inline-block;
     padding: 0.65rem 1.25rem;
@@ -205,6 +263,7 @@ tr:nth-child(even) td {
     font-weight: 600;
     cursor: pointer;
     font-size: 0.9rem;
+    text-align: center;
 }
 
 .btn-primary {
@@ -217,7 +276,85 @@ tr:nth-child(even) td {
     color: white;
 }
 
-.header-logo {
-            height: 50px;
-            width: auto;
-        }
+/* ======================================================================
+   ZONE D'EXPORTATION PDF (DESIGN ÉPURÉ & SOBRE SUR FOND BLANC)
+   ====================================================================== */
+#palmares-print-zone {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+/* En-tête épuré du document */
+.pdf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 1rem;
+}
+
+.pdf-header-title h2 {
+    color: #042247 !important;
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.pdf-header-title h3 {
+    color: #4b5563 !important;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0.2rem 0 0 0;
+}
+
+.pdf-meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    text-align: right;
+}
+
+/* Tableaux épurés et serrés pour l'impression */
+#palmares-print-zone .table-container {
+    border: none !important;
+    border-radius: 0 !important;
+    margin-bottom: 1.5rem;
+}
+
+#palmares-print-zone table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+#palmares-print-zone h4 {
+    color: #042247 !important;
+    font-size: 1rem !important;
+    margin: 1.5rem 0 0.5rem 0 !important;
+    border-left: 3px solid #042247 !important;
+    padding-left: 0.5rem !important;
+    font-weight: 700;
+}
+
+#palmares-print-zone th {
+    background-color: #f8fafc !important; /* Gris ultra clair */
+    color: #0f172a !important;
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+}
+
+#palmares-print-zone td {
+    padding: 0.45rem 0.5rem !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    font-size: 0.8rem !important;
+    color: #334155 !important;
+}
+
+#palmares-print-zone tr:nth-child(even) td {
+    background-color: #fcfcfc !important;
+}

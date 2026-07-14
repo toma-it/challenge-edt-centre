@@ -46,16 +46,16 @@
         </div>
 
         <!-- Zone d'impression épurée -->
-        <div id="palmares-print-zone" style="background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color);">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 1rem;">
+        <div id="palmares-print-zone" style="padding: 2rem;">
+            <div class="pdf-header">
                 <div style="display: flex; align-items: center; gap: 1.5rem;">
-                    <img src="assets/images/logo.png" alt="Logo Ligue" style="height: 70px; width: auto;">
-                    <div>
-                        <h2 style="color: var(--primary); font-size: 1.5rem; font-weight: 800; margin: 0;">CHALLENGE ÉCOLES DE TIR</h2>
-                        <h3 id="pdf-subtitle" style="color: var(--accent); font-weight: 600; font-size: 1.1rem; margin: 0.25rem 0 0 0;">Étape</h3>
+                    <img src="logo.png" alt="Logo" style="height: 60px; width: auto;">
+                    <div class="pdf-header-title">
+                        <h2>CHALLENGE ÉCOLES DE TIR</h2>
+                        <h3 id="pdf-subtitle">Étape</h3>
                     </div>
                 </div>
-                <div id="pdf-meta" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-align: right; text-transform: uppercase;">Discipline | Catégorie</div>
+                <div id="pdf-meta" class="pdf-meta">Discipline | Catégorie</div>
             </div>
 
             <div id="dynamic-tables-container">

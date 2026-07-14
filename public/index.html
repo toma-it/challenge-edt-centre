@@ -3,36 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Challenge EDT : La relève au 10.9</title>
+    <title>Challenge EDT 10.9</title>
     <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
     <header>
-        <h1>La relève au <span>10.9</span> - Challenge Écoles de Tir</h1>
+        <div class="header-left">
+            <img src="logo.png" alt="Ligue" class="header-logo">
+            <h1>Challenge EDT - <span>La relève au 10.9</span></h1>
+        </div>
         <nav>
             <a href="index.html" class="active">Accueil</a>
             <a href="palmares.html">Classements</a>
-            <a href="direct.html">Écran Live</a>
-            <a href="admin.html">Administration</a>
+            <a href="admin.html">Admin</a>
         </nav>
     </header>
 
-    <div class="container" style="text-align: center; margin-top: 4rem;">
-        <h2 style="font-size: 2.5rem; color: var(--primary);">Saison 2026 / 2027</h2>
-        <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem;">Ligue de Tir du Centre-Val de Loire</p>
+    <div class="container">
+        <div class="hero">
+            <h2>Challenge Régional des Écoles de Tir</h2>
+            <p>Saison 2026 / 2027</p>
+        </div>
 
-        <div class="grid-menu">
-            <a href="palmares.html" class="card">
-                <h2>🏆 Palmarès & Résultats</h2>
-                <p>Consultez les résultats de chaque étape ainsi que le classement général dynamique de la saison.</p>
+        <div class="home-grid">
+            <!-- Carte Direct TV -->
+            <a href="direct.html" class="home-card">
+                <div>
+                    <h3>Direct Live TV</h3>
+                    <p>Accédez au tableau d'affichage des scores en temps réel pour une diffusion sur grand écran.</p>
+                </div>
+                <span class="btn btn-primary" style="width: 100%;">Lancer le direct</span>
             </a>
-            <a href="direct.html" class="card">
-                <h2>📺 Écran de Direct (TV)</h2>
-                <p>Affichez le défilement automatique des classements en temps réel pour projection au stand de tir.</p>
+
+            <!-- Carte Palmarès -->
+            <a href="palmares.html" class="home-card">
+                <div>
+                    <h3>Palmarès & Classements</h3>
+                    <p>Consultez les résultats étape par étape ainsi que les moyennes générales calculées à la volée.</p>
+                </div>
+                <span class="btn btn-primary" style="width: 100%;">Voir les classements</span>
             </a>
-            <a href="admin.html" class="card">
-                <h2>🔐 Espace Administrateur</h2>
-                <p>Réservé à l'import des CSV de résultats d'ISISWEB et au paramétrage des étapes du Challenge.</p>
+
+            <!-- Carte Admin -->
+            <a href="admin.html" class="home-card">
+                <div>
+                    <h3>Espace Administration</h3>
+                    <p>Importez les fichiers de résultats ISISWEB, gérez l'état des étapes et configurez la saison.</p>
+                </div>
+                <span class="btn btn-primary" style="width: 100%;">Ouvrir la console</span>
             </a>
         </div>
     </div>
