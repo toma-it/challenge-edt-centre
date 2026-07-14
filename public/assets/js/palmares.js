@@ -54,6 +54,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderRankings() {
+        const tablesContainer = document.getElementById("dynamic-tables-container");
+        
+        // Sécurité active : si le conteneur n'existe pas sur la page, on stoppe proprement sans crash
+        if (!tablesContainer) {
+            console.warn("Le conteneur 'dynamic-tables-container' est absent de cette page. Rendu annulé.");
+            return;
+        }
+
         tablesContainer.innerHTML = "";
         const selDisc = filterDiscipline.value;
         const selCat = filterCategory.value;
@@ -62,14 +70,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const disciplineKeysToRender = (selDisc === "all") ? [...DISCIPLINES.map(d => d.key), COMBINE.key] : [selDisc];
         const categoryCodesToRender = (selCat === "all") ? CATEGORIES.map(c => c.code) : [selCat];
 
-        // Pour l'en-tête globale du PDF
+        // Mise à jour sécurisée des textes de l'en-tête PDF
         const stepObj = allSteps[targetStep] || {};
         let headerSub = targetStep === "general" ? "Classement Général Intermédiaire (3 meilleurs scores)" : stepObj.name;
         if (targetStep !== "general" && (stepObj.lieu || stepObj.date)) {
             headerSub += ` (${stepObj.lieu || ''} - ${stepObj.date || ''})`;
         }
-        document.getElementById("pdf-subtitle").textContent = headerSub;
-        document.getElementById("pdf-meta").textContent = `Épreuve : ${selDisc === "all" ? "Toutes" : disciplineByKey(selDisc).label} | Catégorie : ${selCat === "all" ? "Toutes" : categoryLabel(selCat)}`;
+
+        const pdfSubtitle = document.getElementById("pdf-subtitle");
+        const pdfMeta = document.getElementById("pdf-meta");
+
+        if (pdfSubtitle) {
+            pdfSubtitle.textContent = headerSub;
+        }
+        if (pdfMeta) {
+            const discLabel = selDisc === "all" ? "Toutes" : disciplineByKey(selDisc).label;
+            const catLabel = selCat === "all" ? "Toutes" : categoryLabel(selCat);
+            pdfMeta.textContent = `Épreuve : ${discLabel} | Catégorie : ${catLabel}`;
+        }
 
         // Génération successive ordonnée par épreuve puis catégorie
         disciplineKeysToRender.forEach(discKey => {
