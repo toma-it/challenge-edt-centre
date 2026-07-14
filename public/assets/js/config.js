@@ -33,14 +33,13 @@ if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(CONFIG.firebase);
 }
 
-// On n'initialise les services que s'ils sont chargés dans le HTML
 const db = (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : null;
 const auth = (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') ? firebase.auth() : null;
 
 const ROOT = 'seasons';
-const activeSeason = "2026_2027";
+const activeSeason = "2026_2027"; 
 
-// ─── Catégories d'âge gérées par le règlement École de Tir ───────────────
+// Ordre fédéral des Catégories (PF, PG, BF, BG, MF, MG)
 const CATEGORIES = [
   { code: "PF", label: "Poussines" },
   { code: "PG", label: "Poussins" },
@@ -49,39 +48,36 @@ const CATEGORIES = [
   { code: "MF", label: "Minimes Filles" },
   { code: "MG", label: "Minimes Garçons" }
 ];
+
+// Ordre fédéral des Disciplines (Pistolet, Carabine, Combiné)
+const DISCIPLINES = [
+  { code: "150", key: "pistolet", label: "Pistolet", series: 4 },
+  { code: "154", key: "carabine", label: "Carabine", series: 4 }
+];
+const COMBINE = { code: "150/154", key: "combine", label: "Combiné EDT (150/154)" };
+
 function categoryLabel(code) {
   const c = CATEGORIES.find(c => c.code === (code || '').toUpperCase());
   return c ? c.label : (code || 'Catégorie inconnue');
 }
 
-// ─── Disciplines du programme (École de Tir, épreuves 150 / 154) ─────────
-// "key" = identifiant technique utilisé dans la base de données.
-const DISCIPLINES = [
-  { code: "150", key: "pistolet", label: "Pistolet 10 mètres Écoles de Tir", series: 4 },
-  { code: "154", key: "carabine", label: "Carabine 10 mètres Écoles de Tir", series: 4 }
-];
-const COMBINE = { code: "150/154", key: "combine", label: "Combiné EDT (150/154)" };
-
 function disciplineByKey(key) { 
-  if (key === COMBINE.key) return COMBINE;
-  return DISCIPLINES.find(d => d.key === key); 
+    if (key === COMBINE.key) return COMBINE;
+    return DISCIPLINES.find(d => d.key === key); 
 }
 
-// Reconnaît la discipline à partir du libellé "EPREUVE" d'un CSV ISISWEB
-// (ex : "150 - Pistolet 10 mètres Ecoles de Tir" → pistolet)
 function detectDiscipline(epreuveRaw) {
-  const code = (epreuveRaw || '').trim().split(/[\s-]/)[0];
-  if (code.startsWith(COMBINE.code)) return COMBINE;
+  const epreuveNorm = (epreuveRaw || '').trim();
+  if (epreuveNorm.startsWith(COMBINE.code)) return COMBINE;
+  
+  const code = epreuveNorm.split(/[\s-]/)[0];
   return DISCIPLINES.find(d => d.code === code) || null;
 }
 
-// Normalisation des codes catégories bruts ISISWEB (déjà au bon format ici,
-// mais on nettoie les espaces/majuscules par sécurité).
 function normalizeCategoryCode(raw) {
   return (raw || '').trim().toUpperCase();
 }
 
-// ─── Étapes par défaut proposées à la création d'une saison ──────────────
 const DEFAULT_ETAPES = [
   { key: "E1", order: 1, name: "Étape 1", type: "etape" },
   { key: "E2", order: 2, name: "Étape 2", type: "etape" },

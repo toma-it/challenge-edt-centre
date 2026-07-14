@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palmares - Challenge EDT 10.9</title>
+    <title>Palmarès - Challenge EDT 10.9</title>
     <link rel="stylesheet" href="assets/css/styles.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -11,7 +11,10 @@
 </head>
 <body>
     <header>
-        <h1>Challenge EDT - <span>La releve au 10.9</span></h1>
+        <div class="header-left">
+            <img src="logo.png" alt="Ligue" class="header-logo">
+            <h1>Challenge EDT - <span>La relève au 10.9</span></h1>
+        </div>
         <nav>
             <a href="index.html">Accueil</a>
             <a href="palmares.html" class="active">Classements</a>
@@ -23,41 +26,40 @@
         <div class="card">
             <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
                 <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="filter-step">Etape selectionnee</label>
+                    <label for="filter-step">Étape sélectionnée</label>
                     <select id="filter-step"></select>
                 </div>
                 <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="filter-discipline">Epreuve</label>
+                    <label for="filter-discipline">Épreuve</label>
                     <select id="filter-discipline">
-                        <option value="all">Toutes les epreuves</option>
+                        <option value="all">Toutes les épreuves</option>
                     </select>
                 </div>
                 <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label for="filter-category">Categorie</label>
-                    <select id="filter-category"></select>
+                    <label for="filter-category">Catégorie</label>
+                    <select id="filter-category">
+                        <option value="all">Toutes les catégories</option>
+                    </select>
                 </div>
                 <button class="btn btn-primary" id="btn-pdf" style="height: 42px; margin-bottom: 1rem;">Exporter en PDF</button>
             </div>
         </div>
 
-        <div class="card" id="palmares-print-zone" style="padding: 2rem;">
-            <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem;">
-                <h2 style="color: var(--primary); font-size: 1.6rem; margin-bottom: 0.25rem; font-weight: 800;">CHALLENGE ECOLE DE TIR 10.9</h2>
-                <h3 id="pdf-subtitle" style="color: var(--accent); font-weight: 600; font-size: 1.15rem; margin-bottom: 0.5rem;">Etape</h3>
-                <div id="pdf-meta" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Discipline | Categorie</div>
+        <!-- Zone d'impression épurée -->
+        <div id="palmares-print-zone" style="background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    <img src="logo.png" alt="Logo Ligue" style="height: 70px; width: auto;">
+                    <div>
+                        <h2 style="color: var(--primary); font-size: 1.5rem; font-weight: 800; margin: 0;">CHALLENGE ÉCOLES DE TIR</h2>
+                        <h3 id="pdf-subtitle" style="color: var(--accent); font-weight: 600; font-size: 1.1rem; margin: 0.25rem 0 0 0;">Étape</h3>
+                    </div>
+                </div>
+                <div id="pdf-meta" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-align: right; text-transform: uppercase;">Discipline | Catégorie</div>
             </div>
 
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr id="table-headers">
-                            <!-- Genere dynamiquement -->
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                        <!-- Genere dynamiquement -->
-                    </tbody>
-                </table>
+            <div id="dynamic-tables-container">
+                <!-- Les tableaux épurés se chargeront ici -->
             </div>
         </div>
     </div>

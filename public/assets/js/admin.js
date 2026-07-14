@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const stepsTableBody = document.getElementById("steps-table-body");
     const importStepSelect = document.getElementById("import-step-select");
+    const finaleMatchTypeZone = document.getElementById("finale-match-type-zone");
+    const importMatchType = document.getElementById("import-match-type");
     const shootersTableBody = document.getElementById("shooters-table-body");
     const searchShooter = document.getElementById("search-shooter");
 
@@ -38,8 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadAdminDashboard() {
         db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
             const data = snapshot.val();
-            
-            // Si la base est neuve, initialisation complète depuis config.js
             if (!data || !data.steps) {
                 const initialSteps = {};
                 DEFAULT_ETAPES.forEach(s => {
@@ -48,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 db.ref(`${ROOT}/${activeSeason}/steps`).set(initialSteps);
                 return;
             }
-
             globalShooters = data.shooters || {};
             renderStepsTable(data.steps);
             renderImportDropdown(data.steps);
@@ -79,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
             stepsTableBody.appendChild(tr);
         });
 
-        // Événements d'enregistrement en direct
         document.querySelectorAll(".step-date-input").forEach(i => i.addEventListener("change", e => {
             db.ref(`${ROOT}/${activeSeason}/steps/${e.target.dataset.key}/date`).set(e.target.value);
         }));
@@ -94,13 +92,28 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderImportDropdown(steps) {
         const current = importStepSelect.value;
         importStepSelect.innerHTML = "";
-        Object.entries(steps).forEach(([k, v]) => {
+        Object.entries(steps).sort((a, b) => {
+            return (DEFAULT_ETAPES.find(s => s.key === a[0])?.order || 0) - (DEFAULT_ETAPES.find(s => s.key === b[0])?.order || 0);
+        }).forEach(([k, v]) => {
             const opt = document.createElement("option");
             opt.value = k; opt.textContent = v.name;
             importStepSelect.appendChild(opt);
         });
-        if (current) importStepSelect.value = current;
+        if (current) {
+            importStepSelect.value = current;
+        }
+        toggleFinaleZone();
     }
+
+    function toggleFinaleZone() {
+        if (importStepSelect.value === "FINALE") {
+            finaleMatchTypeZone.style.display = "block";
+        } else {
+            finaleMatchTypeZone.style.display = "none";
+        }
+    }
+
+    importStepSelect.addEventListener("change", toggleFinaleZone);
 
     function renderShootersTable(shooters, filterText = "") {
         shootersTableBody.innerHTML = "";
@@ -112,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (filtered.length === 0) {
-            shootersTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Aucun tireur trouve en base de données.</td></tr>`;
+            shootersTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Aucun tireur trouvé.</td></tr>`;
             return;
         }
 
@@ -123,9 +136,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 Object.entries(s.results).forEach(([stepKey, disciplines]) => {
                     Object.entries(disciplines).forEach(([discKey, score]) => {
                         resultsList.push(`
-                            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; margin-bottom: 4px; font-size: 0.8rem;">
+                            <div style="display: flex; justify-content: space-between; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; margin-bottom: 4px; font-size: 0.8rem;">
                                 <span style="font-weight: 700; color: var(--primary);">${stepKey}</span>
-                                <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">${discKey}</span>
+                                <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">${discKey.replace('_qual', ' (Qualif)').replace('_fin', ' (Finale)')}</span>
                                 <span style="font-weight: 700; color: var(--success);">${score} pts</span>
                             </div>
                         `);
@@ -133,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 scoresHTML = resultsList.join("");
             } else {
-                scoresHTML = `<span style="font-style: italic; color: var(--text-muted); font-size: 0.85rem;">Aucun score</span>`;
+                scoresHTML = `<span style="font-style: italic; color: var(--text-muted);">Aucun score</span>`;
             }
 
             const tr = document.createElement("tr");
@@ -142,11 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td><strong style="text-transform: uppercase;">${s.lastName}</strong> ${s.firstName}</td>
                 <td><span class="badge badge-primary">${s.category}</span></td>
                 <td>${s.club}</td>
-                <td>
-                    <div style="max-height: 120px; overflow-y: auto; padding-right: 4px;">
-                        ${scoresHTML}
-                    </div>
-                </td>
+                <td><div style="max-height: 120px; overflow-y: auto;">${scoresHTML}</div></td>
             `;
             shootersTableBody.appendChild(tr);
         });
@@ -154,7 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     searchShooter.addEventListener("input", (e) => renderShootersTable(globalShooters, e.target.value));
 
-    // Import CSV
     csvDropzone.addEventListener("click", () => csvFileInput.click());
     csvFileInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
@@ -176,19 +184,26 @@ document.addEventListener("DOMContentLoaded", () => {
                         const catCode = normalizeCategoryCode(row['Catégorie E']);
                         const basePath = `${ROOT}/${activeSeason}/shooters/licence_${licence}`;
 
+                        // Clé d'enregistrement de score (gestion de la finale)
+                        let targetDiscKey = discipline.key;
+                        if (stepKey === "FINALE") {
+                            const subType = importMatchType.value; // 'qualif' ou 'finale'
+                            targetDiscKey = `${discipline.key}_${subType}`;
+                        }
+
                         updates[`${basePath}/licence`] = licence;
                         updates[`${basePath}/lastName`] = row['Nom']?.trim().toUpperCase();
                         updates[`${basePath}/firstName`] = row['Prenom']?.trim();
                         updates[`${basePath}/club`] = row['Association Nom']?.trim();
                         updates[`${basePath}/category`] = catCode;
-                        updates[`${basePath}/results/${stepKey}/${discipline.key}`] = score;
+                        updates[`${basePath}/results/${stepKey}/${targetDiscKey}`] = score;
                         count++;
                     });
 
                     if (count > 0) {
-                        db.ref().update(updates).then(() => alert(`Importation réussie : ${count} fiches traitées.`));
+                        db.ref().update(updates).then(() => alert(`Importation réussie : ${count} fiches d'épreuves intégrées.`));
                     } else {
-                        alert("Erreur : Aucun score valide trouvé pour le challenge dans ce fichier.");
+                        alert("Erreur : Aucun score valide de challenge trouvé dans votre fichier.");
                     }
                 }
             });
@@ -196,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     btnReset.addEventListener("click", () => {
-        if (confirm("Vider complètement la liste des tireurs ?")) {
+        if (confirm("Vider complètement l'intégralité des tireurs de cette saison ?")) {
             db.ref(`${ROOT}/${activeSeason}/shooters`).remove();
         }
     });

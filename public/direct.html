@@ -40,6 +40,15 @@
             box-sizing: border-box;
             border-bottom: 3px solid var(--primary-light);
         }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .header-logo {
+            height: 50px;
+            width: auto;
+        }
         header h1 {
             margin: 0;
             font-size: 1.4rem;
@@ -107,7 +116,7 @@
         }
         .live-table td {
             padding: 0.7rem 1.5rem;
-            font-size: 1.05rem; /* Ajuste plus compact et moderne pour lecture TV éloignée */
+            font-size: 1.05rem;
             font-weight: 600;
             border-bottom: 1px solid var(--border-color);
             color: var(--text-dark);
@@ -130,7 +139,10 @@
 </head>
 <body>
     <header>
-        <h1>Challenge EDT - <span>Direct TV</span></h1>
+        <div class="header-left">
+            <img src="logo.png" alt="Ligue" class="header-logo">
+            <h1>Challenge EDT - <span>Direct TV</span></h1>
+        </div>
         <div id="live-step-details" style="text-align: right; font-size: 0.95rem; font-weight: 500;">
             <span id="live-step-name" style="background: var(--accent); color: white; padding: 6px 16px; border-radius: 20px; font-weight: 700; margin-right: 10px;">Chargement...</span>
             <span id="live-step-meta" style="color: #eaf2f9;"></span>
@@ -140,7 +152,7 @@
     <div class="live-container">
         <div class="scroll-container" id="scroll-container">
             <div class="scroll-content" id="scroll-content">
-                <!-- Les cartes se chargeront ici -->
+                <!-- Chargé dynamiquement -->
             </div>
         </div>
     </div>
@@ -152,29 +164,31 @@
             let shooters = {};
             let scrollInterval = null;
 
-            db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
-                const data = snapshot.val();
-                if (!data) return;
+            if (db) {
+                db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) return;
 
-                shooters = data.shooters || {};
-                const steps = data.steps || {};
+                    shooters = data.shooters || {};
+                    const steps = data.steps || {};
 
-                const activeStep = Object.entries(steps).find(([k, v]) => v.status === "ongoing") || 
-                                   Object.entries(steps).reverse().find(([k, v]) => v.status === "completed") ||
-                                   Object.entries(steps)[0];
-                
-                if (activeStep) {
-                    currentStepKey = activeStep[0];
-                    document.getElementById("live-step-name").textContent = activeStep[1].name;
+                    const activeStep = Object.entries(steps).find(([k, v]) => v.status === "ongoing") || 
+                                       Object.entries(steps).reverse().find(([k, v]) => v.status === "completed") ||
+                                       Object.entries(steps)[0];
                     
-                    let metaStr = "";
-                    if(activeStep[1].lieu) metaStr += `Lieu : ${activeStep[1].lieu}`;
-                    if(activeStep[1].date) metaStr += ` | Date : ${activeStep[1].date}`;
-                    document.getElementById("live-step-meta").textContent = metaStr;
-                }
-                
-                buildLiveBoards();
-            });
+                    if (activeStep) {
+                        currentStepKey = activeStep[0];
+                        document.getElementById("live-step-name").textContent = activeStep[1].name;
+                        
+                        let metaStr = "";
+                        if(activeStep[1].lieu) metaStr += `Lieu : ${activeStep[1].lieu}`;
+                        if(activeStep[1].date) metaStr += ` | Date : ${activeStep[1].date}`;
+                        document.getElementById("live-step-meta").textContent = metaStr;
+                    }
+                    
+                    buildLiveBoards();
+                });
+            }
 
             function buildLiveBoards() {
                 const content = document.getElementById("scroll-content");
@@ -187,26 +201,52 @@
                 content.innerHTML = "";
                 let boardsAdded = 0;
 
-                // On parcourt toutes les catégories et toutes les disciplines
-                CATEGORIES.forEach(cat => {
-                    const disciplinesKeys = [...DISCIPLINES.map(d => d.key), COMBINE.key];
-                    
-                    disciplinesKeys.forEach(discKey => {
-                        // On filtre uniquement les tireurs ayant tiré cette épreuve
-                        const list = Object.values(shooters)
-                            .filter(s => normalizeCategoryCode(s.category) === cat.code)
-                            .map(s => {
-                                const score = (s.results && s.results[currentStepKey]) ? s.results[currentStepKey][discKey] : null;
-                                return { 
-                                    name: `${s.lastName} ${s.firstName}`, 
-                                    club: s.club, 
-                                    score: score !== null && score !== undefined && !isNaN(parseFloat(score)) ? parseFloat(score) : null 
-                                };
-                            })
-                            .filter(s => s.score !== null)
-                            .sort((a, b) => b.score - a.score);
+                const disciplinesKeys = [...DISCIPLINES.map(d => d.key), COMBINE.key];
 
-                        if (list.length === 0) return; // Ignore si pas de tireur
+                // Respect strict de l'ordre d'affichage (Épreuve puis Catégorie d'âge)
+                disciplinesKeys.forEach(discKey => {
+                    CATEGORIES.forEach(cat => {
+                        let list = [];
+                        
+                        Object.values(shooters)
+                            .filter(s => normalizeCategoryCode(s.category) === cat.code)
+                            .forEach(s => {
+                                if (currentStepKey === "FINALE") {
+                                    const qual = (s.results && s.results[currentStepKey]) ? parseFloat(s.results[currentStepKey][`${discKey}_qual`]) : null;
+                                    const fin = (s.results && s.results[currentStepKey]) ? parseFloat(s.results[currentStepKey][`${discKey}_fin`]) : null;
+                                    
+                                    if ((qual !== null && !isNaN(qual)) || (fin !== null && !isNaN(fin))) {
+                                        list.push({ 
+                                            name: `${s.lastName} ${s.firstName}`, 
+                                            club: s.club, 
+                                            qualScore: qual,
+                                            finScore: fin
+                                        });
+                                    }
+                                } else {
+                                    const score = (s.results && s.results[currentStepKey]) ? parseFloat(s.results[currentStepKey][discKey]) : null;
+                                    if (score !== null && !isNaN(score)) {
+                                        list.push({ 
+                                            name: `${s.lastName} ${s.firstName}`, 
+                                            club: s.club, 
+                                            score: score 
+                                        });
+                                    }
+                                }
+                            });
+
+                        if (list.length === 0) return;
+
+                        // Tri spécifique
+                        if (currentStepKey === "FINALE") {
+                            list.sort((a, b) => {
+                                const aF = a.finScore || 0; const bF = b.finScore || 0;
+                                if (bF !== aF) return bF - aF;
+                                return (b.qualScore || 0) - (a.qualScore || 0);
+                            });
+                        } else {
+                            list.sort((a, b) => b.score - a.score);
+                        }
 
                         boardsAdded++;
 
@@ -215,16 +255,51 @@
                         
                         let rowsHTML = "";
                         let rank = 1;
+                        
                         list.forEach(item => {
-                            rowsHTML += `
+                            if (currentStepKey === "FINALE") {
+                                rowsHTML += `
+                                    <tr>
+                                        <td style="width: 10%; text-align: center;"><span class="rank-badge">${rank++}</span></td>
+                                        <td style="width: 45%; text-transform: uppercase;">${item.name}</td>
+                                        <td style="width: 25%; color: var(--text-muted);">${item.club}</td>
+                                        <td style="width: 10%; text-align: right; color: var(--text-muted);">Q: ${item.qualScore !== null ? item.qualScore : "-"}</td>
+                                        <td style="width: 10%; text-align: right; color: var(--success); padding-right: 1.5rem;">F: <strong>${item.finScore !== null ? item.finScore : "-"}</strong></td>
+                                    </tr>
+                                `;
+                            } else {
+                                rowsHTML += `
+                                    <tr>
+                                        <td style="width: 10%; text-align: center;"><span class="rank-badge">${rank++}</span></td>
+                                        <td style="width: 50%; text-transform: uppercase;">${item.name}</td>
+                                        <td style="width: 25%; color: var(--text-muted);">${item.club}</td>
+                                        <td style="width: 15%; text-align: right; color: var(--success); padding-right: 1.5rem;"><strong>${item.score}</strong></td>
+                                    </tr>
+                                `;
+                            }
+                        });
+
+                        let headersHTML = "";
+                        if (currentStepKey === "FINALE") {
+                            headersHTML = `
                                 <tr>
-                                    <td style="width: 10%; text-align: center;"><span class="rank-badge">${rank++}</span></td>
-                                    <td style="width: 50%; text-transform: uppercase;">${item.name}</td>
-                                    <td style="width: 25%; color: var(--text-muted);">${item.club}</td>
-                                    <td style="width: 15%; text-align: right; color: var(--success); padding-right: 1.5rem;"><strong>${item.score}</strong></td>
+                                    <th style="width: 10%; text-align: center;">Pl</th>
+                                    <th style="width: 45%;">Nom Prénom</th>
+                                    <th style="width: 25%;">Association</th>
+                                    <th style="width: 10%; text-align: right;">Qualif.</th>
+                                    <th style="width: 10%; text-align: right; padding-right: 1.5rem;">Finale</th>
                                 </tr>
                             `;
-                        });
+                        } else {
+                            headersHTML = `
+                                <tr>
+                                    <th style="width: 10%; text-align: center;">Pl</th>
+                                    <th style="width: 50%;">Nom Prénom</th>
+                                    <th style="width: 25%;">Association</th>
+                                    <th style="width: 15%; text-align: right; padding-right: 1.5rem;">Score</th>
+                                </tr>
+                            `;
+                        }
 
                         card.innerHTML = `
                             <div class="live-card-header">
@@ -232,17 +307,8 @@
                                 <span class="live-card-discipline">${disciplineByKey(discKey).label}</span>
                             </div>
                             <table class="live-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 10%; text-align: center;">Pl</th>
-                                        <th style="width: 50%;">Nom Prenom</th>
-                                        <th style="width: 25%;">Club / Association</th>
-                                        <th style="width: 15%; text-align: right; padding-right: 1.5rem;">Score</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${rowsHTML}
-                                </tbody>
+                                <thead>${headersHTML}</thead>
+                                <tbody>${rowsHTML}</tbody>
                             </table>
                         `;
                         content.appendChild(card);
@@ -252,7 +318,7 @@
                 if (boardsAdded === 0) {
                     content.innerHTML = `
                         <div style="text-align: center; padding: 4rem; background: white; border-radius: 12px; border: 1px solid var(--border-color);">
-                            <h2 style="color: var(--text-muted); font-weight: 500;">Aucun tir enregistre pour le moment sur cette etape.</h2>
+                            <h2 style="color: var(--text-muted); font-weight: 500;">Aucun tir enregistré pour le moment sur cette étape.</h2>
                         </div>
                     `;
                 } else {
@@ -264,7 +330,7 @@
                 const container = document.getElementById("scroll-container");
                 const content = document.getElementById("scroll-content");
                 
-                // Duplication du contenu HTML pour simuler une boucle sans fin parfaite
+                // Duplication parfaite du tableau pour assurer un défilement infini sans coupure
                 const originalChildren = Array.from(content.children);
                 originalChildren.forEach(child => {
                     const clone = child.cloneNode(true);
@@ -275,7 +341,7 @@
                 const limit = content.scrollHeight / 2;
 
                 function scrollLoop() {
-                    scrollPos += 0.6; // Vitesse de defilement fluide et agreable
+                    scrollPos += 0.55; // Vitesse lente et fluide
                     if (scrollPos >= limit) {
                         scrollPos = 0;
                     }

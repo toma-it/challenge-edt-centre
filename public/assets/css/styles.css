@@ -1,8 +1,8 @@
 :root {
-    --bg-main: #fffdef; /* Fond beige */
-    --primary: #042247; /* Bleu marine */
-    --primary-light: #8dafd8; /* Bleu clair */
-    --accent: #4283d3; /* Bleu d'accentuation */
+    --bg-main: #fffdef; /* Fond beige doux */
+    --primary: #042247; /* Bleu marine profond */
+    --primary-light: #8dafd8; /* Bleu clair pastel */
+    --accent: #4283d3; /* Bleu d'action */
     --text-dark: #042247;
     --text-muted: #5b6f84;
     --border-color: #d0deeb;
@@ -28,11 +28,23 @@ body {
 header {
     background-color: var(--primary);
     color: white;
-    padding: 1.25rem 2rem;
+    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 3px solid var(--primary-light);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-logo {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
 }
 
 header h1 {
@@ -71,7 +83,6 @@ header nav a:hover, header nav a.active {
     padding: 0 1.5rem;
 }
 
-/* Cartes */
 .card {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -90,7 +101,6 @@ header nav a:hover, header nav a.active {
     font-weight: 700;
 }
 
-/* Formulaires */
 .form-group {
     display: flex;
     flex-direction: column;
@@ -117,15 +127,14 @@ input, select {
 input:focus, select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(66, 131, 211, 0.15);
 }
 
-/* Tableaux */
 .table-container {
     overflow-x: auto;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: var(--card-bg);
+    margin-bottom: 2rem;
 }
 
 table {
@@ -141,7 +150,6 @@ th {
     padding: 0.85rem 1rem;
     font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 td {
@@ -159,57 +167,6 @@ tr:nth-child(even) td {
     background-color: rgba(141, 175, 216, 0.04);
 }
 
-/* Zone d'import CSV (Dropzone) */
-.dropzone {
-    border: 2px dashed var(--primary-light);
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    background-color: var(--bg-main);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: var(--primary);
-    font-weight: 600;
-}
-
-.dropzone:hover {
-    border-color: var(--accent);
-    background-color: rgba(66, 131, 211, 0.04);
-}
-
-/* Boutons */
-.btn {
-    display: inline-block;
-    padding: 0.65rem 1.25rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-    font-size: 0.9rem;
-}
-
-.btn-primary {
-    background-color: var(--primary);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: var(--accent);
-}
-
-.btn-accent {
-    background-color: var(--accent);
-    color: white;
-}
-
-.btn-danger {
-    background-color: var(--danger);
-    color: white;
-}
-
-/* Badges */
 .badge {
     display: inline-block;
     padding: 0.25rem 0.5rem;
@@ -227,4 +184,35 @@ tr:nth-child(even) td {
 .badge-success {
     background-color: #e8f5e9;
     color: var(--success);
+}
+
+.dropzone {
+    border: 2px dashed var(--primary-light);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    background-color: var(--bg-main);
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.65rem 1.25rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
 }
