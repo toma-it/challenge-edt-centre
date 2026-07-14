@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const stepsTableBody = document.getElementById("steps-table-body");
     const importStepSelect = document.getElementById("import-step-select");
-    const finaleMatchTypeZone = document.getElementById("finale-match-type-zone");
     const importMatchType = document.getElementById("import-match-type");
     const shootersTableBody = document.getElementById("shooters-table-body");
     const searchShooter = document.getElementById("search-shooter");
@@ -102,18 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (current) {
             importStepSelect.value = current;
         }
-        toggleFinaleZone();
     }
-
-    function toggleFinaleZone() {
-        if (importStepSelect.value === "FINALE") {
-            finaleMatchTypeZone.style.display = "block";
-        } else {
-            finaleMatchTypeZone.style.display = "none";
-        }
-    }
-
-    importStepSelect.addEventListener("change", toggleFinaleZone);
 
     function renderShootersTable(shooters, filterText = "") {
         shootersTableBody.innerHTML = "";
@@ -138,7 +126,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         resultsList.push(`
                             <div style="display: flex; justify-content: space-between; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; margin-bottom: 4px; font-size: 0.8rem;">
                                 <span style="font-weight: 700; color: var(--primary);">${stepKey}</span>
-                                <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">${discKey.replace('_qual', ' (Qualif)').replace('_fin', ' (Finale)')}</span>
                                 <span style="font-weight: 700; color: var(--success);">${score} pts</span>
                             </div>
                         `);
@@ -184,13 +171,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         const catCode = normalizeCategoryCode(row['Catégorie E']);
                         const basePath = `${ROOT}/${activeSeason}/shooters/licence_${licence}`;
 
-                        // Clé d'enregistrement de score (gestion de la finale)
+                        // Clé d'enregistrement de score
                         let targetDiscKey = discipline.key;
-                        if (stepKey === "FINALE") {
-                            const subType = importMatchType.value; // 'qualif' ou 'finale'
-                            targetDiscKey = `${discipline.key}_${subType}`;
-                        }
-
+                    
                         updates[`${basePath}/licence`] = licence;
                         updates[`${basePath}/lastName`] = row['Nom']?.trim().toUpperCase();
                         updates[`${basePath}/firstName`] = row['Prenom']?.trim();

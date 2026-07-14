@@ -327,8 +327,6 @@ tr:nth-child(even) td {
 #palmares-print-zone {
     background-color: #ffffff !important;
     color: #0f172a !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
     box-shadow: none !important;
 }
 

@@ -211,42 +211,20 @@
                         Object.values(shooters)
                             .filter(s => normalizeCategoryCode(s.category) === cat.code)
                             .forEach(s => {
-                                if (currentStepKey === "FINALE") {
-                                    const qual = (s.results && s.results[currentStepKey]) ? parseFloat(s.results[currentStepKey][`${discKey}_qual`]) : null;
-                                    const fin = (s.results && s.results[currentStepKey]) ? parseFloat(s.results[currentStepKey][`${discKey}_fin`]) : null;
-                                    
-                                    if ((qual !== null && !isNaN(qual)) || (fin !== null && !isNaN(fin))) {
-                                        list.push({ 
-                                            name: `${s.lastName} ${s.firstName}`, 
-                                            club: s.club, 
-                                            qualScore: qual,
-                                            finScore: fin
-                                        });
-                                    }
-                                } else {
-                                    const score = (s.results && s.results[currentStepKey]) ? parseFloat(s.results[currentStepKey][discKey]) : null;
-                                    if (score !== null && !isNaN(score)) {
-                                        list.push({ 
-                                            name: `${s.lastName} ${s.firstName}`, 
-                                            club: s.club, 
-                                            score: score 
-                                        });
-                                    }
+                                const score = (s.results && s.results[currentStepKey]) ? parseFloat(s.results[currentStepKey][discKey]) : null;
+                                if (score !== null && !isNaN(score)) {
+                                    list.push({ 
+                                        name: `${s.lastName} ${s.firstName}`, 
+                                        club: s.club, 
+                                        score: score 
+                                    });
                                 }
                             });
 
                         if (list.length === 0) return;
 
                         // Tri spécifique
-                        if (currentStepKey === "FINALE") {
-                            list.sort((a, b) => {
-                                const aF = a.finScore || 0; const bF = b.finScore || 0;
-                                if (bF !== aF) return bF - aF;
-                                return (b.qualScore || 0) - (a.qualScore || 0);
-                            });
-                        } else {
-                            list.sort((a, b) => b.score - a.score);
-                        }
+                        list.sort((a, b) => b.score - a.score);
 
                         boardsAdded++;
 
@@ -257,50 +235,26 @@
                         let rank = 1;
                         
                         list.forEach(item => {
-                            if (currentStepKey === "FINALE") {
-                                rowsHTML += `
-                                    <tr>
-                                        <td style="width: 10%; text-align: center;"><span class="rank-badge">${rank++}</span></td>
-                                        <td style="width: 45%; text-transform: uppercase;">${item.name}</td>
-                                        <td style="width: 25%; color: var(--text-muted);">${item.club}</td>
-                                        <td style="width: 10%; text-align: right; color: var(--text-muted);">Q: ${item.qualScore !== null ? item.qualScore : "-"}</td>
-                                        <td style="width: 10%; text-align: right; color: var(--success); padding-right: 1.5rem;">F: <strong>${item.finScore !== null ? item.finScore : "-"}</strong></td>
-                                    </tr>
-                                `;
-                            } else {
-                                rowsHTML += `
-                                    <tr>
-                                        <td style="width: 10%; text-align: center;"><span class="rank-badge">${rank++}</span></td>
-                                        <td style="width: 50%; text-transform: uppercase;">${item.name}</td>
-                                        <td style="width: 25%; color: var(--text-muted);">${item.club}</td>
-                                        <td style="width: 15%; text-align: right; color: var(--success); padding-right: 1.5rem;"><strong>${item.score}</strong></td>
-                                    </tr>
-                                `;
-                            }
+                            rowsHTML += `
+                                <tr>
+                                    <td style="width: 10%; text-align: center;"><span class="rank-badge">${rank++}</span></td>
+                                    <td style="width: 50%; text-transform: uppercase;">${item.name}</td>
+                                    <td style="width: 25%; color: var(--text-muted);">${item.club}</td>
+                                    <td style="width: 15%; text-align: right; color: var(--success); padding-right: 1.5rem;"><strong>${item.score}</strong></td>
+                                </tr>
+                            `;
                         });
 
                         let headersHTML = "";
-                        if (currentStepKey === "FINALE") {
-                            headersHTML = `
-                                <tr>
-                                    <th style="width: 10%; text-align: center;">Pl</th>
-                                    <th style="width: 45%;">Nom Prénom</th>
-                                    <th style="width: 25%;">Association</th>
-                                    <th style="width: 10%; text-align: right;">Qualif.</th>
-                                    <th style="width: 10%; text-align: right; padding-right: 1.5rem;">Finale</th>
-                                </tr>
-                            `;
-                        } else {
-                            headersHTML = `
-                                <tr>
-                                    <th style="width: 10%; text-align: center;">Pl</th>
-                                    <th style="width: 50%;">Nom Prénom</th>
-                                    <th style="width: 25%;">Association</th>
-                                    <th style="width: 15%; text-align: right; padding-right: 1.5rem;">Score</th>
-                                </tr>
-                            `;
-                        }
-
+                        headersHTML = `
+                            <tr>
+                                <th style="width: 10%; text-align: center;">Pl</th>
+                                <th style="width: 50%;">Nom Prénom</th>
+                                <th style="width: 25%;">Association</th>
+                                <th style="width: 15%; text-align: right; padding-right: 1.5rem;">Score</th>
+                            </tr>
+                        `;
+                        
                         card.innerHTML = `
                             <div class="live-card-header">
                                 <span class="live-card-title">${cat.label}</span>

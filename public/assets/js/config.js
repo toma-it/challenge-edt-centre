@@ -84,6 +84,5 @@ const DEFAULT_ETAPES = [
   { key: "E3", order: 3, name: "Étape 3", type: "etape" },
   { key: "E4", order: 4, name: "Étape 4", type: "etape" },
   { key: "E5", order: 5, name: "Étape 5", type: "etape" },
-  { key: "E6", order: 6, name: "Étape 6", type: "etape" },
-  { key: "FINALE", order: 7, name: "Finale régionale", type: "finale" }
+  { key: "E6", order: 6, name: "Étape 6", type: "etape" }
 ];

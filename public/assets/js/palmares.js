@@ -120,13 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let stepScores = {};
                 sortedStepsKeys.forEach(sk => {
                     let scoreVal = null;
-                    if (sk === "FINALE") {
-                        // Pour le classement général, on prend la qualification de la finale
-                        scoreVal = (s.results && s.results[sk]) ? parseFloat(s.results[sk][`${discKey}_qual`]) : null;
-                    } else {
-                        scoreVal = (s.results && s.results[sk]) ? parseFloat(s.results[sk][discKey]) : null;
-                    }
-
+                    scoreVal = (s.results && s.results[sk]) ? parseFloat(s.results[sk][discKey]) : null;
                     if (scoreVal !== null && !isNaN(scoreVal)) {
                         scores.push(scoreVal);
                         stepScores[sk] = scoreVal;
@@ -209,84 +203,44 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
         } else {
-            // Classement d'Étape classique ou Finale
+            // Classement d'Étape classique
             let records = [];
             list.forEach(s => {
-                if (stepKey === "FINALE") {
-                    const qualScore = (s.results && s.results[stepKey]) ? parseFloat(s.results[stepKey][`${discKey}_qual`]) : null;
-                    const finScore = (s.results && s.results[stepKey]) ? parseFloat(s.results[stepKey][`${discKey}_fin`]) : null;
-                    if ((qualScore !== null && !isNaN(qualScore)) || (finScore !== null && !isNaN(finScore))) {
-                        records.push({
-                            name: `${s.lastName} ${s.firstName}`, club: s.club, qualScore: qualScore, finScore: finScore
-                        });
-                    }
-                } else {
-                    const score = (s.results && s.results[stepKey]) ? parseFloat(s.results[stepKey][discKey]) : null;
-                    if (score !== null && !isNaN(score)) {
-                        records.push({
-                            name: `${s.lastName} ${s.firstName}`, club: s.club, score: score
-                        });
-                    }
+                const score = (s.results && s.results[stepKey]) ? parseFloat(s.results[stepKey][discKey]) : null;
+                if (score !== null && !isNaN(score)) {
+                    records.push({
+                        name: `${s.lastName} ${s.firstName}`, club: s.club, score: score
+                    });
                 }
             });
 
             if (records.length === 0) return null;
 
-            // Règle de tri officielle pour la Finale
-            if (stepKey === "FINALE") {
-                records.sort((a, b) => {
-                    const aF = a.finScore || 0; const bF = b.finScore || 0;
-                    if (bF !== aF) return bF - aF;
-                    return (b.qualScore || 0) - (a.qualScore || 0);
-                });
-            } else {
-                records.sort((a, b) => b.score - a.score);
-            }
+            // Règle de tri
+            records.sort((a, b) => b.score - a.score);
 
             let rowsHTML = "";
             let rank = 1;
 
             records.forEach(r => {
-                if (stepKey === "FINALE") {
-                    rowsHTML += `
-                        <tr>
-                            <td><strong>${rank++}</strong></td>
-                            <td style="text-transform: uppercase; font-weight: 600;">${r.name}</td>
-                            <td style="font-size:0.85rem;">${r.club}</td>
-                            <td style="text-align: right; font-weight: 500; color: var(--text-muted);">${r.qualScore !== null ? r.qualScore : "-"}</td>
-                            <td style="text-align: right; font-weight: 700; color: var(--success);">${r.finScore !== null ? r.finScore : "-"}</td>
-                        </tr>
-                    `;
-                } else {
-                    rowsHTML += `
-                        <tr>
-                            <td><strong>${rank++}</strong></td>
-                            <td style="text-transform: uppercase; font-weight: 600;">${r.name}</td>
-                            <td style="font-size:0.85rem;">${r.club}</td>
-                            <td style="text-align: right; font-weight: 700; color: var(--success);">${r.score}</td>
-                        </tr>
-                    `;
-                }
+                rowsHTML += `
+                    <tr>
+                        <td><strong>${rank++}</strong></td>
+                        <td style="text-transform: uppercase; font-weight: 600;">${r.name}</td>
+                        <td style="font-size:0.85rem;">${r.club}</td>
+                        <td style="text-align: right; font-weight: 700; color: var(--success);">${r.score}</td>
+                    </tr>
+                `;
             });
 
             let headersHTML = "";
-            if (stepKey === "FINALE") {
-                headersHTML = `
-                    <th style="width: 8%">Rg</th>
-                    <th style="width: 35%">Tireur</th>
-                    <th>Association</th>
-                    <th style="text-align: right; width: 15%">Qualif.</th>
-                    <th style="text-align: right; width: 15%">Finale</th>
-                `;
-            } else {
-                headersHTML = `
-                    <th style="width: 8%">Rg</th>
-                    <th style="width: 35%">Tireur</th>
-                    <th>Association</th>
-                    <th style="text-align: right; width: 15%">Score</th>
-                `;
-            }
-
+            headersHTML = `
+                <th style="width: 8%">Rg</th>
+                <th style="width: 35%">Tireur</th>
+                <th>Association</th>
+                <th style="text-align: right; width: 15%">Score</th>
+            `;
+            
             return `
                 <div style="margin-top: 1.5rem; margin-bottom: 2rem;">
                     <h4 style="color: var(--primary); font-size: 1.1rem; border-left: 4px solid var(--accent); padding-left: 0.75rem; margin-bottom: 0.75rem; font-weight: 700; text-transform: uppercase;">
