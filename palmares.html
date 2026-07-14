@@ -159,6 +159,8 @@
                 .sort((a, b) => (etapes[a].config?.order || 0) - (etapes[b].config?.order || 0))
                 .map(k => ({
                     key: k, order: etapes[k].config?.order || 0, name: etapes[k].config?.name || k,
+                    department: etapes[k].config?.department || '',
+                    location: etapes[k].config?.location || '',
                     shootersRaw: buildShootersRaw(etapes[k].shooters || {}),
                     pdfs: etapes[k].pdfs || {}
                 }));
@@ -177,6 +179,8 @@
             const area = document.getElementById('resultsArea');
             const catFilter = document.getElementById('catSelect').value;
             document.getElementById('pdfEtapeLinks').innerHTML = '';
+            const oldLocLine = document.getElementById('etapeLocLine');
+            if (oldLocLine) oldLocLine.remove();
 
             if (!currentSeason) { area.innerHTML = '<div class="no-data">Aucune saison disponible.</div>'; return; }
 
@@ -185,7 +189,13 @@
                 const etapes = getEtapesOfType('etape').concat(getEtapesOfType('finale'));
                 const etape = etapes.find(e => e.key === etapeKey);
                 if (!etape) { area.innerHTML = '<div class="no-data">Étape introuvable.</div>'; return; }
-                document.getElementById('printMeta').textContent = `${(seasonsCache[currentSeason].config?.label) || currentSeason} — ${etape.name}`;
+                const etapeLocParts = [etape.department ? `Dépt. ${etape.department}` : '', etape.location || ''].filter(Boolean);
+                const etapeLocLabel = etapeLocParts.join(' — ');
+                document.getElementById('printMeta').textContent = `${(seasonsCache[currentSeason].config?.label)||currentSeason} — ${etape.name}${etapeLocLabel ? ' — ' + etapeLocLabel : ''}`;
+
+                document.getElementById('pdfEtapeLinks').insertAdjacentHTML('beforebegin',
+                etapeLocLabel ? `<p id="etapeLocLine" style="font-weight:700; color:var(--primary-dark); margin:0 0 8px 0;">📍 ${etapeLocLabel}</p>` : ''
+                );
 
                 // Liens PDF ISISWEB déposés
                 const links = [];

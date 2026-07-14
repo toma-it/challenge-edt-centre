@@ -382,9 +382,10 @@
         <b>${cfg.name || k}</b> (${nbShooters} tireur·se·s)
         <div style="font-size:.8rem; color:var(--text-light);">
           Dépt : <input type="text" value="${cfg.department || ''}" style="width:50px;" onchange="updateEtapeField('${k}','department',this.value)">
+          Lieu : <input type="text" value="${cfg.location || ''}" placeholder="Ville / club accueillant" style="width:180px;" onchange="updateEtapeField('${k}','location',this.value)">
           Du : <input type="date" value="${cfg.dateStart || ''}" onchange="updateEtapeField('${k}','dateStart',this.value)">
           au : <input type="date" value="${cfg.dateEnd || ''}" onchange="updateEtapeField('${k}','dateEnd',this.value)">
-          <span style="font-size:.7rem; color:var(--text-light);">(laisser "au" vide si un seul jour)</span>
+          <span style="font-size:.7rem; color:var(--text-light);">(laisser "au" vide si un seul jour)</span><br />
           Vitesse défilement : <input type="number" value="${cfg.scrollSpeed || 40}" style="width:60px;" onchange="updateEtapeField('${k}','scrollSpeed',parseInt(this.value))">
         </div>
         ${pdfSlots}

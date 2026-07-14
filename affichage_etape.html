@@ -134,6 +134,7 @@
             <img src="logo.png" alt="Logo" style="height:65px;">
             <div style="text-align:center; flex:1;">
                 <h1 id="compTitle">Chargement...</h1>
+                <div class="sub" id="etapeLocation" style="font-weight:700;"></div>
                 <div class="sub" id="challengeSub"></div>
             </div>
             <img src="logo.png" alt="" style="height:65px; visibility:hidden;">
@@ -176,6 +177,8 @@
             etapeRef.child('config').on('value', snap => {
                 const cfg = snap.val() || {};
                 document.getElementById('compTitle').textContent = cfg.name || etapeKey;
+                const locParts = [cfg.department ? `Dépt. ${cfg.department}` : '', cfg.location || ''].filter(Boolean);
+                document.getElementById('etapeLocation').textContent = locParts.join(' — ');
                 if (cfg.scrollSpeed !== undefined && !urlParams.has('speed')) {
                     document.getElementById('speedSlider').value = cfg.scrollSpeed;
                     scrollSpeed = 90 - cfg.scrollSpeed;
