@@ -216,3 +216,8 @@ tr:nth-child(even) td {
     background-color: var(--danger);
     color: white;
 }
+
+.header-logo {
+            height: 50px;
+            width: auto;
+        }
