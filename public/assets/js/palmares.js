@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Mise à jour sécurisée des textes de l'en-tête PDF
         const stepObj = allSteps[targetStep] || {};
-        let headerSub = targetStep === "general" ? "Classement Général Intermédiaire (3 meilleurs scores)" : stepObj.name;
+        let headerSub = targetStep === "general" ? "Classement Général (3 meilleurs scores)" : stepObj.name;
         if (targetStep !== "general" && (stepObj.lieu || stepObj.date)) {
             headerSub += ` (${stepObj.lieu || ''} - ${stepObj.date || ''})`;
         }
