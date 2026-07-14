@@ -1,0 +1,15 @@
+{
+  "rules": {
+    ".read": true,
+    "seasons": {
+      "$season": {
+        ".write": "auth != null",
+        "shooters": {
+          "$shooterId": {
+            ".write": "auth != null"
+          }
+        }
+      }
+    }
+  }
+}
