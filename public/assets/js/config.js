@@ -17,9 +17,7 @@ const CONFIG = {
   // (sert à générer les QR codes). Ex : "https://moncompte.github.io/challenge-edt-centre"
   githubBase: "https://toma-it.github.io/challenge-edt-centre",
 
-  // Configuration du NOUVEAU projet Firebase créé pour ce challenge
-  // (Réglages du projet > Général > Vos applications > SDK).
-  firebase: {
+  firebase = {
     apiKey: "AIzaSyDA3ZkdOXRlHTwl_-3ZCzlkFtxIU3XbOos",
     authDomain: "resultats-challengedt-centre.firebaseapp.com",
     databaseURL: "https://resultats-challengedt-centre-default-rtdb.europe-west1.firebasedatabase.app",
@@ -27,13 +25,15 @@ const CONFIG = {
     storageBucket: "resultats-challengedt-centre.firebasestorage.app",
     messagingSenderId: "26383943096",
     appId: "1:26383943096:web:5f390790431837c957fb4d"
-    }
+  },
 };
 
 // ─── Initialisation Firebase (ne rien modifier en dessous) ───────────────
 firebase.initializeApp(CONFIG.firebase);
 const db = firebase.database();
+const auth = firebase.auth();
 const ROOT = 'seasons';
+const activeSeason = "2026_2027";
 
 // ─── Catégories d'âge gérées par le règlement École de Tir ───────────────
 const CATEGORIES = [
@@ -57,12 +57,16 @@ const DISCIPLINES = [
 ];
 const COMBINE = { code: "150/154", key: "combine", label: "Combiné EDT (150/154)" };
 
-function disciplineByKey(key) { return DISCIPLINES.find(d => d.key === key); }
+function disciplineByKey(key) { 
+  if (key === COMBINE.key) return COMBINE;
+  return DISCIPLINES.find(d => d.key === key); 
+}
 
 // Reconnaît la discipline à partir du libellé "EPREUVE" d'un CSV ISISWEB
 // (ex : "150 - Pistolet 10 mètres Ecoles de Tir" → pistolet)
 function detectDiscipline(epreuveRaw) {
   const code = (epreuveRaw || '').trim().split(/[\s-]/)[0];
+  if (code.startsWith(COMBINE.code)) return COMBINE;
   return DISCIPLINES.find(d => d.code === code) || null;
 }
 

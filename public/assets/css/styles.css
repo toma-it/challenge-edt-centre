@@ -1,0 +1,246 @@
+/* Thème & Variables de couleur */
+:root {
+    --primary: #0f4c81;       /* Bleu Royal Sportif */
+    --primary-light: #eaf2f9; /* Pastel d'arrière-plan */
+    --accent: #f5a623;        /* Or / Cible */
+    --bg-main: #f8fafc;       /* Gris très clair */
+    --card-bg: #ffffff;
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --success: #10b981;
+    --danger: #ef4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+/* En-têtes & Navigation */
+header {
+    background-color: var(--primary);
+    color: white;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+header h1 span {
+    color: var(--accent);
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav a:hover, nav a.active {
+    color: var(--accent);
+}
+
+/* Conteneurs */
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Cartes (Dashboard Index) */
+.grid-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+    color: var(--primary);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+/* Boutons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #0b3a62;
+}
+
+.btn-accent {
+    background-color: var(--accent);
+    color: var(--text-dark);
+}
+
+.btn-accent:hover {
+    background-color: #e09212;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+/* Formulaires & Filtres */
+.filter-bar {
+    background-color: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-end;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+select, input[type="file"], input[type="text"], input[type="password"] {
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: #f8fafc;
+    font-size: 0.95rem;
+}
+
+/* Tableaux */
+.table-container {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+    padding: 1rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.95rem;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+/* Panneau d'administration */
+.admin-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+}
+
+.auth-card {
+    max-width: 400px;
+    margin: 10% auto;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+/* Zone d'importation CSV */
+.dropzone {
+    border: 2px dashed var(--primary);
+    background-color: var(--primary-light);
+    padding: 2rem;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+/* --- Styles spécifiques pour l'exportation PDF --- */
+.pdf-layout {
+    display: none; /* Masqué à l'écran */
+}
+
+@media print {
+    body {
+        background-color: white;
+    }
+    .no-print {
+        display: none !important;
+    }
+}

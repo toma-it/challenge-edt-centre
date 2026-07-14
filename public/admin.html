@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Admin - Challenge EDT 10.9</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <!-- SDK Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- Parseur de fichiers CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Console Administrateur - <span>EDT 10.9</span></h1>
+        <nav>
+            <a href="index.html">Accueil</a>
+            <a href="palmares.html">Classements</a>
+            <a href="admin.html" class="active">Admin</a>
+        </nav>
+    </header>
+
+    <!-- Formulaire d'authentification -->
+    <div id="login-zone" class="auth-card">
+        <h2 style="margin-bottom: 1.5rem; text-align: center;">Connexion Sécurisée</h2>
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="admin-email">Adresse E-mail</label>
+            <input type="email" id="admin-email" placeholder="exemple@fftir.fr">
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="admin-password">Mot de passe</label>
+            <input type="password" id="admin-password">
+        </div>
+        <button class="btn btn-accent" style="width: 100%;" id="btn-login">Se Connecter</button>
+    </div>
+
+    <!-- Écran principal Admin -->
+    <div id="admin-panel" class="container" style="display: none;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; align-items: center;">
+            <h2>Tableau de bord - Administration</h2>
+            <button class="btn btn-danger" id="btn-logout">Se Déconnecter</button>
+        </div>
+
+        <div class="admin-grid">
+            <!-- État des Épreuves -->
+            <div class="card" style="cursor: default;">
+                <h3>⚙️ Statuts des Étapes</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                    Configurez l'état actuel de chaque événement du challenge.
+                </p>
+                <div id="steps-status-list">
+                    <!-- Généré dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Traitement CSV ISISWEB -->
+            <div class="card" style="cursor: default;">
+                <h3>📤 Importateur de Résultats ISISWEB (CSV)</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    Glissez le fichier exporté depuis ISISWEB pour intégrer automatiquement les scores.
+                </p>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="import-step-select">Étape de destination</label>
+                    <select id="import-step-select">
+                        <!-- Généré dynamiquement -->
+                    </select>
+                </div>
+
+                <div class="dropzone" id="csv-dropzone">
+                    <p>Cliquez ou glissez-déposez le fichier CSV d'ISISWEB ici</p>
+                    <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+                </div>
+                
+                <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                    <h3 style="color: var(--danger);">⚠️ Zone de danger</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Effacer la saison active videra tous les scores des tireurs.
+                    </p>
+                    <button class="btn btn-danger" id="btn-reset">⚠️ Réinitialiser la Saison active</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chargement de config.js en premier -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/admin.js"></script>
+</body>
+</html>

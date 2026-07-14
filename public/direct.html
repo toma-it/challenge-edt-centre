@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affichage Live TV - Challenge EDT 10.9</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <!-- SDK Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <style>
+        body {
+            background-color: #0c1a30;
+            color: white;
+            overflow: hidden;
+        }
+        header {
+            background-color: #060e1b;
+        }
+        .live-card {
+            background-color: #142544;
+            border: 2px solid #1e3a6c;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 1rem;
+            height: calc(100vh - 120px);
+            overflow: hidden;
+            position: relative;
+        }
+        .scrollable-tbody {
+            display: block;
+            max-height: calc(100vh - 280px);
+            overflow-y: hidden;
+        }
+        table {
+            display: table;
+        }
+        th {
+            background-color: #1e3a6c;
+            color: #ffaa00;
+        }
+        td {
+            border-bottom: 1px solid #1e3a6c;
+            font-size: 1.25rem;
+        }
+        tr:nth-child(even) {
+            background-color: #1a2d52;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DIRECT TV : Challenge Écoles de Tir <span>La relève au 10.9</span></h1>
+        <div id="live-step-badge" style="background-color: var(--accent); color: black; font-weight: bold; padding: 5px 15px; border-radius: 20px;">Chargement...</div>
+    </header>
+
+    <div class="container" style="max-width: 100%;">
+        <div class="live-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 id="live-discipline" style="color: #4da3ff; font-size: 2rem;">Discipline</h2>
+                <h2 id="live-category" style="color: var(--accent); font-size: 2.2rem;">Catégorie d'âge</h2>
+            </div>
+
+            <table style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">Rg</th>
+                        <th style="width: 45%;">Nom Prénom</th>
+                        <th style="width: 30%;">Club / Association</th>
+                        <th style="width: 15%; text-align: right;">Score</th>
+                    </tr>
+                </thead>
+                <tbody id="live-table-body" class="scrollable-tbody">
+                    <!-- Données en direct -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Chargement de config.js en premier -->
+    <script src="assets/js/config.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Liste dynamique construite à partir de config.js !
+            const categoriesCodes = CATEGORIES.map(c => c.code);
+            const disciplinesKeys = [...DISCIPLINES.map(d => d.key), COMBINE.key];
+
+            let catIndex = 0;
+            let discIndex = 0;
+
+            let currentStepKey = "";
+            let shooters = {};
+
+            // Écouter les données en direct
+            db.ref(`${ROOT}/${activeSeason}`).on("value", (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                shooters = data.shooters || {};
+                const steps = data.steps || {};
+                
+                // On cible l'étape en cours ("ongoing"), ou à défaut la dernière terminée ("completed")
+                const activeStep = Object.entries(steps).find(([k, v]) => v.status === "ongoing") || 
+                                   Object.entries(steps).reverse().find(([k, v]) => v.status === "completed");
+                
+                if (activeStep) {
+                    currentStepKey = activeStep[0];
+                    document.getElementById("live-step-badge").textContent = activeStep[1].name;
+                }
+                
+                displayNextRotation();
+            });
+
+            function displayNextRotation() {
+                if (!currentStepKey) return;
+
+                const discKey = disciplinesKeys[discIndex];
+                const catCode = categoriesCodes[catIndex];
+
+                const disciplineObj = disciplineByKey(discKey);
+
+                document.getElementById("live-discipline").textContent = disciplineObj.label;
+                document.getElementById("live-category").textContent = categoryLabel(catCode);
+
+                const tbody = document.getElementById("live-table-body");
+                tbody.innerHTML = "";
+
+                // Extraction des tireurs correspondants
+                const activeList = Object.values(shooters)
+                    .filter(s => normalizeCategoryCode(s.category) === catCode)
+                    .map(s => {
+                        const score = (s.results && s.results[currentStepKey]) ? s.results[currentStepKey][discKey] : null;
+                        return { name: `${s.lastName} ${s.firstName}`, club: s.club, score: score };
+                    })
+                    .filter(s => s.score !== null && s.score !== undefined)
+                    .sort((a, b) => b.score - a.score);
+
+                if (activeList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 30px; font-style: italic; color: #64748b;">Aucun tireur classé pour le moment</td></tr>`;
+                } else {
+                    let rank = 1;
+                    activeList.forEach(item => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td style="width: 10%;"><strong>${rank++}</strong></td>
+                            <td style="width: 45%;">${item.name}</td>
+                            <td style="width: 30%;">${item.club}</td>
+                            <td style="width: 15%; text-align: right; color: var(--accent);"><strong>${item.score}</strong></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // Préparation du cycle de rotation suivant
+                catIndex++;
+                if (catIndex >= categoriesCodes.length) {
+                    catIndex = 0;
+                    discIndex = (discIndex + 1) % disciplinesKeys.length;
+                }
+            }
+
+            // Déclenchement de la rotation d'affichage toutes les 15 secondes
+            setInterval(displayNextRotation, 15000);
+        });
+    </script>
+</body>
+</html>
