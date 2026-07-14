@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Challenge EDT</title>
+    <link rel="icon" href="logo.png">
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        .etape-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .etape-row .infos {
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .etape-row .infos b {
+            color: var(--primary-dark);
+        }
+
+        .etape-row .actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .pill-type {
+            font-size: .7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .pill-type.etape {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .pill-type.finale {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        #loginOverlay {
+            position: fixed;
+            inset: 0;
+            background: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        #loginOverlay .box {
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            width: 320px;
+            text-align: center;
+        }
+
+        #loginOverlay input {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .season-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .season-tab {
+            padding: 8px 14px;
+            border-radius: 10px;
+            background: #e2e8f0;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: .85rem;
+        }
+
+        .season-tab.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .pdf-slot {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .8rem;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loginOverlay">
+        <div class="box">
+            <h2>🔒 Espace Admin</h2>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPwd" placeholder="Mot de passe">
+            <button class="btn" style="width:100%" onclick="doLogin()">Se connecter</button>
+            <p id="loginError" style="color:#c0392b; font-size:.85rem;"></p>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="top">
+            <img src="logo.png" alt="Logo">
+            <div style="text-align:center; flex:1;">
+                <h1>Administration — Challenge EDT</h1>
+                <div class="sub" id="challengeTitle"></div>
+            </div>
+            <button class="btn secondary" onclick="doLogout()">Déconnexion</button>
+        </header>
+
+        <div class="card">
+            <h2>📅 Saisons</h2>
+            <div class="season-tabs" id="seasonTabs"></div>
+            <button class="btn small" onclick="openCreateSeasonModal()">+ Nouvelle saison</button>
+        </div>
+
+        <div class="card" id="etapesCard" style="display:none;">
+            <h2>🎯 Étapes de la saison <span id="currentSeasonLabel"></span></h2>
+            <div id="etapesList"></div>
+        </div>
+
+        <div class="card">
+            <h2>🔗 Liens utiles</h2>
+            <p><a href="palmares.html" target="_blank">📊 Page publique Palmarès</a> — classements par étape, général et
+                combiné, PDF téléchargeables.</p>
+        </div>
+    </div>
+
+    <!-- Modale création saison -->
+    <div class="modal-overlay" id="createSeasonModal">
+        <div class="modal-content">
+            <h3>Nouvelle saison</h3>
+            <p style="font-size:.85rem; color:var(--text-light);">Format recommandé : 2026-2027</p>
+            <input type="text" id="newSeasonKey" placeholder="Ex: 2026-2027" style="width:100%; margin-bottom:10px;">
+            <input type="text" id="newSeasonLabel" placeholder="Ex: Saison 2026 / 2027"
+                style="width:100%; margin-bottom:14px;">
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button class="btn secondary" onclick="closeCreateSeasonModal()">Annuler</button>
+                <button class="btn" onclick="createSeason()">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale QR -->
+    <div class="modal-overlay" id="qrModal">
+        <div class="modal-content" style="text-align:center;">
+            <h3 id="qrTitle"></h3>
+            <div id="qrcode" style="display:inline-block; margin:10px 0;"></div>
+            <p style="font-size:.8rem; word-break:break-all;" id="qrUrl"></p>
+            <button class="btn secondary" onclick="closeQrModal()">Fermer</button>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        document.getElementById('challengeTitle').textContent = CONFIG.challengeName;
+        const auth = firebase.auth();
+        auth.onAuthStateChanged(u => { document.getElementById('loginOverlay').style.display = u ? 'none' : 'flex'; if (u) loadSeasons(); });
+
+        function doLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pwd = document.getElementById('loginPwd').value;
+            const err = document.getElementById('loginError');
+            err.textContent = 'Connexion...';
+            auth.signInWithEmailAndPassword(email, pwd).catch(e => { err.textContent = "Échec : " + e.message; });
+        }
+        function doLogout() { auth.signOut(); }
+        document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+        let seasonsCache = {};
+        let currentSeason = null;
+
+        function loadSeasons() {
+            db.ref(ROOT).on('value', snap => {
+                seasonsCache = snap.val() || {};
+                renderSeasonTabs();
+            });
+        }
+
+        function renderSeasonTabs() {
+            const keys = Object.keys(seasonsCache).sort().reverse();
+            const tabs = document.getElementById('seasonTabs');
+            if (keys.length === 0) { tabs.innerHTML = '<em style="color:var(--text-light)">Aucune saison. Créez-en une.</em>'; return; }
+            if (!currentSeason || !keys.includes(currentSeason)) currentSeason = keys[0];
+            tabs.innerHTML = keys.map(k => {
+                const label = (seasonsCache[k].config && seasonsCache[k].config.label) || k;
+                return `<div class="season-tab ${k === currentSeason ? 'active' : ''}" onclick="selectSeason('${k}')">${label}</div>`;
+            }).join('');
+            renderEtapes();
+        }
+
+        function selectSeason(k) { currentSeason = k; renderSeasonTabs(); }
+
+        function openCreateSeasonModal() { document.getElementById('createSeasonModal').classList.add('active'); }
+        function closeCreateSeasonModal() { document.getElementById('createSeasonModal').classList.remove('active'); }
+
+        function createSeason() {
+            const key = document.getElementById('newSeasonKey').value.trim();
+            const label = document.getElementById('newSeasonLabel').value.trim() || key;
+            if (!key || /[.#$\[\]\/]/.test(key)) return alert("Identifiant de saison invalide.");
+            const etapesInit = {};
+            DEFAULT_ETAPES.forEach(e => {
+                etapesInit[e.key] = { config: { name: e.name, order: e.order, type: e.type, department: "", date: "", scrollSpeed: 40 } };
+            });
+            db.ref(ROOT + '/' + key).set({ config: { label, active: true }, etapes: etapesInit }).then(() => {
+                closeCreateSeasonModal();
+                document.getElementById('newSeasonKey').value = '';
+                document.getElementById('newSeasonLabel').value = '';
+                currentSeason = key;
+            });
+        }
+
+        function renderEtapes() {
+            if (!currentSeason) return;
+            const card = document.getElementById('etapesCard');
+            card.style.display = 'block';
+            const label = (seasonsCache[currentSeason].config && seasonsCache[currentSeason].config.label) || currentSeason;
+            document.getElementById('currentSeasonLabel').textContent = '— ' + label;
+
+            const etapes = (seasonsCache[currentSeason].etapes) || {};
+            const keys = Object.keys(etapes).sort((a, b) => (etapes[a].config?.order || 0) - (etapes[b].config?.order || 0));
+            const list = document.getElementById('etapesList');
+            list.innerHTML = keys.map(k => {
+                const cfg = etapes[k].config || {};
+                const nbShooters = etapes[k].shooters ? Object.keys(etapes[k].shooters).length : 0;
+                const pdfs = etapes[k].pdfs || {};
+                const pdfSlots = ['pistolet', 'carabine', 'combine'].map(dk => {
+                    const has = pdfs[dk];
+                    const dlabel = dk === 'pistolet' ? 'Pistolet' : (dk === 'carabine' ? 'Carabine' : 'Combiné');
+                    return `<div class="pdf-slot">
+        <span>${dlabel} :</span>
+        ${has ? `<a href="${has.data}" download="${has.name}" class="btn small secondary">⬇️ ${has.name}</a><button class="btn small danger" onclick="deletePdf('${k}','${dk}')">✕</button>`
+                            : `<input type="file" accept="application/pdf" onchange="uploadPdf('${k}','${dk}',this)">`}
+      </div>`;
+                }).join('');
+
+                return `<div class="etape-row">
+      <div class="infos">
+        <span class="pill-type ${cfg.type}">${cfg.type === 'finale' ? 'FINALE' : 'ÉTAPE'}</span>
+        <b>${cfg.name || k}</b> (${nbShooters} tireur·se·s)
+        <div style="font-size:.8rem; color:var(--text-light);">
+          Dépt : <input type="text" value="${cfg.department || ''}" style="width:50px;" onchange="updateEtapeField('${k}','department',this.value)">
+          Date : <input type="date" value="${cfg.date || ''}" onchange="updateEtapeField('${k}','date',this.value)">
+          Vitesse défilement : <input type="number" value="${cfg.scrollSpeed || 40}" style="width:60px;" onchange="updateEtapeField('${k}','scrollSpeed',parseInt(this.value))">
+        </div>
+        ${pdfSlots}
+      </div>
+      <div class="actions">
+        <a class="btn small" href="saisie.html?season=${currentSeason}&etape=${k}" target="_blank">✏️ Saisie / Import CSV</a>
+        <a class="btn small secondary" href="${cfg.type === 'finale' ? 'affichage_finale.html' : 'affichage_etape.html'}?season=${currentSeason}&etape=${k}" target="_blank">📺 Affichage</a>
+        <button class="btn small secondary" onclick="openQr('${k}','${cfg.type}')">📱 QR</button>
+        <button class="btn small danger" onclick="deleteEtape('${k}', '${(cfg.name || k).replace(/'/g, "")}')">🗑️</button>
+      </div>
+    </div>`;
+            }).join('');
+        }
+
+        function updateEtapeField(etapeKey, field, value) {
+            db.ref(`${ROOT}/${currentSeason}/etapes/${etapeKey}/config/${field}`).set(value);
+        }
+
+        function deleteEtape(etapeKey, name) {
+            if (confirm(`Supprimer définitivement l'étape "${name}" et tous ses résultats ?`)) {
+                db.ref(`${ROOT}/${currentSeason}/etapes/${etapeKey}`).remove();
+            }
+        }
+
+        function uploadPdf(etapeKey, discKey, input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) return alert("Le PDF dépasse 5 Mo, merci de le compresser.");
+            const reader = new FileReader();
+            reader.onload = e => {
+                db.ref(`${ROOT}/${currentSeason}/etapes/${etapeKey}/pdfs/${discKey}`).set({
+                    name: file.name, data: e.target.result, uploadedAt: Date.now()
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+        function deletePdf(etapeKey, discKey) {
+            db.ref(`${ROOT}/${currentSeason}/etapes/${etapeKey}/pdfs/${discKey}`).remove();
+        }
+
+        let currentQr = {};
+        function openQr(etapeKey, type) {
+            const base = CONFIG.githubBase.replace(/\/+$/, '');
+            const page = type === 'finale' ? 'affichage_finale.html' : 'affichage_etape.html';
+            const url = `${base}/${page}?season=${currentSeason}&etape=${etapeKey}`;
+            document.getElementById('qrTitle').textContent = '📱 ' + etapeKey;
+            document.getElementById('qrUrl').textContent = url;
+            const c = document.getElementById('qrcode'); c.innerHTML = '';
+            new QRCode(c, { text: url, width: 200, height: 200 });
+            document.getElementById('qrModal').classList.add('active');
+        }
+        function closeQrModal() { document.getElementById('qrModal').classList.remove('active'); }
+    </script>
+</body>
+
+</html>

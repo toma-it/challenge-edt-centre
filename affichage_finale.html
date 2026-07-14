@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finale Régionale - En Direct</title>
+    <link rel="icon" href="logo.png">
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        header.top {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+        }
+
+        .phase-banner {
+            background: var(--primary-dark);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin: 24px 0 14px 0;
+            text-align: center;
+        }
+
+        .discipline-section {
+            background: #fff;
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 24px;
+            border: 1px solid #edf2f7;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .03);
+        }
+
+        .discipline-title {
+            color: #042247;
+            background: #b0c7e2;
+            border-left: 6px solid var(--primary);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin: 0 0 14px 0;
+        }
+
+        .category-title {
+            background: #f3e6f0;
+            color: #6d1f4e;
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            width: fit-content;
+            border-left: 4px solid #9b3272;
+            margin-bottom: 10px;
+        }
+
+        .rank-cell {
+            font-weight: 800;
+            width: 44px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .name-cell {
+            font-weight: 700;
+        }
+
+        .score-cell {
+            text-align: right;
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: var(--primary);
+        }
+
+        .series-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e2e8f0;
+            margin: 0 2px;
+            border-radius: 4px;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        .qualified-row td {
+            background: #ecfdf5 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="top">
+            <img src="logo.png" alt="Logo" style="height:65px;">
+            <div style="text-align:center; flex:1;">
+                <h1 id="compTitle">Finale Régionale</h1>
+                <div class="sub" id="challengeSub"></div>
+            </div>
+            <img src="logo.png" alt="" style="height:65px; visibility:hidden;">
+        </header>
+
+        <div class="phase-banner">🏅 Qualification (matin) — les 8 meilleur·e·s de chaque catégorie accèdent à la finale
+        </div>
+        <div id="qualifContainer">
+            <div class="no-data">Chargement...</div>
+        </div>
+
+        <div class="phase-banner">🏆 Finale — Top 8 (après-midi)</div>
+        <div id="finaleContainer">
+            <div class="no-data">Chargement...</div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="ranking.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(location.search);
+        const seasonKey = urlParams.get('season');
+        const etapeKey = urlParams.get('etape');
+        document.getElementById('challengeSub').textContent = CONFIG.challengeName;
+
+        if (!seasonKey || !etapeKey) {
+            document.getElementById('qualifContainer').innerHTML = '<div class="no-data" style="color:#c0392b;">⚠️ Paramètres manquants.</div>';
+        } else {
+            const etapeRef = db.ref(`${ROOT}/${seasonKey}/etapes/${etapeKey}`);
+            etapeRef.child('config').on('value', snap => {
+                const cfg = snap.val() || {};
+                document.getElementById('compTitle').textContent = cfg.name || 'Finale Régionale';
+            });
+            etapeRef.child('shooters').on('value', snap => {
+                const data = snap.val() || {};
+                const all = Object.keys(data).map(k => data[k]);
+                const qualif = all.filter(s => (s.round || 'qualif') === 'qualif');
+                const finale = all.filter(s => s.round === 'finale');
+                document.getElementById('qualifContainer').innerHTML = qualif.length ? renderPhase(qualif, true) : '<div class="no-data">Aucun résultat de qualification pour le moment.</div>';
+                document.getElementById('finaleContainer').innerHTML = finale.length ? renderPhase(finale, false) : '<div class="no-data">La finale n\'a pas encore eu lieu.</div>';
+            });
+        }
+
+        function renderPhase(list, highlightTop8) {
+            let html = '';
+            DISCIPLINES.forEach(disc => {
+                const discList = list.filter(s => s.discipline === disc.key);
+                if (discList.length === 0) return;
+                html += `<div class="discipline-section"><h2 class="discipline-title">${disc.label}</h2>`;
+                const tree = groupByCategory(discList);
+                Object.keys(tree).sort().forEach(cat => {
+                    const ranked = assignRanks(sortShooters(tree[cat]));
+                    html += `
+                        <div class="category-block">
+                            <div class="category-title">${categoryLabel(cat)}</div>
+                            <div class="table-scroll">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width:50px;">Pl.</th>
+                                            <th>Nom Prénom</th>
+                                            <th>Club</th>
+                                            <th style="text-align:center;">Séries</th>
+                                            <th style="text-align:right;">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    ranked.forEach(s => {
+                        const status = s.status || 'OK';
+                        const hr = hasResult(status);
+                        const medal = (s.displayRank === 1) ? '🥇 ' : (s.displayRank === 2) ? '🥈 ' : (s.displayRank === 3) ? '🥉 ' : '';
+                        const displayScore = hr ? Math.round((s.score || 0) * 10) / 10 : '-';
+                        const series = hr ? (s.series || []) : [];
+                        const qualifiedClass = (highlightTop8 && typeof s.displayRank === 'number' && s.displayRank <= 8) ? 'qualified-row' : '';
+                        html += `
+                            <tr class="${qualifiedClass}">
+                                <td class="rank-cell">${s.displayRank}</td>
+                                <td class="name-cell">${medal}${s.lastName} ${s.firstName}</td>
+                                <td>${s.club || '-'}</td>
+                                <td style="text-align:center;">${series.map(v => `<span class="series-badge">${Math.round(v * 10) / 10}</span>`).join('')}</td>
+                                <td class="score-cell">${displayScore}</td>
+                            </tr>
+                            `;
+                    });
+                    html += `</tbody></table></div></div>`;
+                });
+                html += `</div>`;
+            });
+            return html || '<div class="no-data">Aucun résultat.</div>';
+        }
+    </script>
+</body>
+
+</html>

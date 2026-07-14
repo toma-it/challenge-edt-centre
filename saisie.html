@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saisie - Challenge EDT</title>
+    <link rel="icon" href="logo.png">
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        #loginOverlay {
+            position: fixed;
+            inset: 0;
+            background: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        #loginOverlay .box {
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            width: 320px;
+            text-align: center;
+        }
+
+        #loginOverlay input {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .row-shooter {
+            display: grid;
+            grid-template-columns: 90px 1.2fr 1fr 90px 100px 1fr 90px auto;
+            gap: 6px;
+            align-items: center;
+            padding: 8px 6px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: .85rem;
+        }
+
+        .row-shooter input,
+        .row-shooter select {
+            width: 100%;
+            font-size: .8rem;
+            padding: 5px;
+        }
+
+        .grid-header {
+            font-weight: 700;
+            font-size: .75rem;
+            text-transform: uppercase;
+            color: var(--text-light);
+        }
+
+        .import-box {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .series-inputs {
+            display: flex;
+            gap: 3px;
+        }
+
+        .series-inputs input {
+            width: 44px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loginOverlay">
+        <div class="box">
+            <h2>🔒 Espace Admin</h2>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPwd" placeholder="Mot de passe">
+            <button class="btn" style="width:100%" onclick="doLogin()">Se connecter</button>
+            <p id="loginError" style="color:#c0392b; font-size:.85rem;"></p>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="top">
+            <img src="logo.png" alt="Logo">
+            <div style="text-align:center; flex:1;">
+                <h1 id="etapeTitle">Saisie</h1>
+                <div class="sub" id="etapeSub"></div>
+            </div>
+            <a class="btn secondary" href="index_admin.html">⬅ Admin</a>
+        </header>
+
+        <div class="card" id="roundCard" style="display:none;">
+            <h2>🏁 Phase (Finale uniquement)</h2>
+            <select id="roundSelect" onchange="renderShooters()">
+                <option value="qualif">Qualification (matin)</option>
+                <option value="finale">Finale — Top 8 (après-midi)</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <h2>⚡ Import CSV ISISWEB</h2>
+            <div class="import-box">
+                <p style="font-size:.85rem; color:var(--text-light);">
+                    Colonnes attendues (séparateur <b>;</b>) :
+                    <code>NOM;PRENOM;LICENCE;ASSOCIATION NOM;CATÉGORIE E;EPREUVE;PLACE;SÉRIE 1;SÉRIE 2;SÉRIE 3;SÉRIE 4;NOMBRE MOUCHES</code><br>
+                    EPREUVE doit commencer par <b>150</b> (Pistolet) ou <b>154</b> (Carabine). Le classement Combiné
+                    150/154 est calculé automatiquement.
+                </p>
+                <input type="file" id="csvFileInput" accept=".csv">
+                <button class="btn" onclick="triggerCSVImport()">🚀 Importer</button>
+                <div id="importLoader" style="display:none; margin-top:8px; color:var(--primary);">⏳ Import en cours...
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✏️ Ajout manuel</h2>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <input type="text" id="newLicence" placeholder="N° licence" style="width:110px;">
+                <input type="text" id="newNom" placeholder="NOM" style="width:130px;">
+                <input type="text" id="newPrenom" placeholder="Prénom" style="width:130px;">
+                <input type="text" id="newClub" placeholder="Club" style="width:140px;">
+                <select id="newCategorie">${''}</select>
+                <select id="newDiscipline"></select>
+                <button class="btn" onclick="addShooter()">+ Ajouter</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Tireurs saisis (<span id="countShooters">0</span>)</h2>
+            <div class="row-shooter grid-header">
+                <div>Licence</div>
+                <div>Nom Prénom</div>
+                <div>Club</div>
+                <div>Catégorie</div>
+                <div>Discipline</div>
+                <div>Séries</div>
+                <div>Statut</div>
+                <div></div>
+            </div>
+            <div id="shootersList"></div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(location.search);
+        const seasonKey = urlParams.get('season');
+        const etapeKey = urlParams.get('etape');
+        const etapeRef = db.ref(`${ROOT}/${seasonKey}/etapes/${etapeKey}`);
+
+        document.getElementById('newCategorie').innerHTML = CATEGORIES.map(c => `<option value="${c.code}">${c.code} — ${c.label}</option>`).join('');
+        document.getElementById('newDiscipline').innerHTML = DISCIPLINES.map(d => `<option value="${d.key}">${d.label}</option>`).join('');
+
+        const auth = firebase.auth();
+        auth.onAuthStateChanged(u => { document.getElementById('loginOverlay').style.display = u ? 'none' : 'flex'; if (u) init(); });
+        function doLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pwd = document.getElementById('loginPwd').value;
+            auth.signInWithEmailAndPassword(email, pwd).catch(e => document.getElementById('loginError').textContent = "Échec : " + e.message);
+        }
+        document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+        let etapeType = 'etape';
+        let shootersData = []; // [{id, licence, lastName, firstName, club, category, discipline(key), status, score, series, mouches, round}]
+
+        function init() {
+            if (!seasonKey || !etapeKey) { document.body.innerHTML = '<p style="padding:30px;">Paramètres manquants (season / etape).</p>'; return; }
+
+            etapeRef.child('config').on('value', snap => {
+                const cfg = snap.val() || {};
+                etapeType = cfg.type || 'etape';
+                document.getElementById('etapeTitle').textContent = cfg.name || etapeKey;
+                document.getElementById('etapeSub').textContent = seasonKey;
+                document.getElementById('roundCard').style.display = (etapeType === 'finale') ? 'block' : 'none';
+            });
+
+            etapeRef.child('shooters').on('value', snap => {
+                const data = snap.val() || {};
+                shootersData = Object.keys(data).map(id => ({ id, ...data[id] }));
+                renderShooters();
+            });
+        }
+
+        function currentRound() { return etapeType === 'finale' ? document.getElementById('roundSelect').value : null; }
+
+        function renderShooters() {
+            const round = currentRound();
+            const filtered = shootersData.filter(s => etapeType !== 'finale' || (s.round || 'qualif') === round);
+            document.getElementById('countShooters').textContent = filtered.length;
+            const list = document.getElementById('shootersList');
+            if (filtered.length === 0) { list.innerHTML = '<div class="no-data">Aucun tireur.</div>'; return; }
+
+            list.innerHTML = filtered.map(s => {
+                const disc = disciplineByKey(s.discipline);
+                const nbSeries = disc ? disc.series : 4;
+                const series = s.series || Array(nbSeries).fill(0);
+                const seriesInputs = series.map((v, i) => `<input type="number" step="0.1" value="${v}" onchange="updateSeries('${s.id}',${i},this.value)">`).join('');
+                return `<div class="row-shooter">
+      <div>${s.licence || '-'}</div>
+      <div>${s.lastName} ${s.firstName}</div>
+      <div>${s.club || '-'}</div>
+      <div>${s.category || '-'}</div>
+      <div>${disc ? disc.label.split(' ')[0] : s.discipline}</div>
+      <div class="series-inputs">${seriesInputs}</div>
+      <div>
+        <select onchange="updateField('${s.id}','status',this.value)">
+          ${['OK', 'DNS', 'DSQ', 'DNF', 'HM'].map(st => `<option value="${st}" ${s.status === st ? 'selected' : ''}>${st}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn small danger" onclick="deleteShooter('${s.id}')">🗑️</button>
+    </div>`;
+            }).join('');
+        }
+
+        function updateField(id, field, value) { etapeRef.child('shooters/' + id).update({ [field]: value }); touchLastUpdated(); }
+        function updateSeries(id, idx, value) {
+            const s = shootersData.find(s => s.id === id);
+            const disc = disciplineByKey(s.discipline);
+            const arr = (s.series || Array(disc ? disc.series : 4).fill(0)).slice();
+            arr[idx] = parseFloat(value) || 0;
+            const total = Math.round(arr.reduce((a, b) => a + b, 0) * 10) / 10;
+            etapeRef.child('shooters/' + id).update({ series: arr, score: total });
+            touchLastUpdated();
+        }
+        function deleteShooter(id) { if (confirm("Supprimer ce tireur ?")) etapeRef.child('shooters/' + id).remove(); touchLastUpdated(); }
+        function touchLastUpdated() { etapeRef.child('config/lastUpdated').set(Date.now()); }
+
+        function addShooter() {
+            const licence = document.getElementById('newLicence').value.trim();
+            const nom = document.getElementById('newNom').value.trim().toUpperCase();
+            const prenom = document.getElementById('newPrenom').value.trim();
+            const club = document.getElementById('newClub').value.trim();
+            const category = document.getElementById('newCategorie').value;
+            const discipline = document.getElementById('newDiscipline').value;
+            if (!nom || !prenom) return alert("Nom et prénom requis.");
+            const disc = disciplineByKey(discipline);
+            const payload = {
+                licence, lastName: nom, firstName: prenom, club, category, discipline,
+                status: "OK", score: 0, mouches: 0, series: Array(disc.series).fill(0)
+            };
+            if (etapeType === 'finale') payload.round = currentRound();
+            etapeRef.child('shooters').push(payload);
+            touchLastUpdated();
+            document.getElementById('newLicence').value = '';
+            document.getElementById('newNom').value = '';
+            document.getElementById('newPrenom').value = '';
+            document.getElementById('newClub').value = '';
+        }
+
+        function triggerCSVImport() {
+            const fileInput = document.getElementById('csvFileInput');
+            if (!fileInput.files[0]) return alert("Sélectionnez un fichier CSV.");
+            document.getElementById('importLoader').style.display = 'block';
+            setTimeout(processCSVImport, 80);
+        }
+
+        function processCSVImport() {
+            const fileInput = document.getElementById('csvFileInput');
+            const file = fileInput.files[0];
+            const loader = document.getElementById('importLoader');
+            const round = currentRound();
+            const reader = new FileReader();
+            reader.onload = e => {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                if (lines.length <= 1) { loader.style.display = 'none'; return alert("CSV vide ou invalide."); }
+                const headers = lines[0].split(';').map(h => h.trim().toUpperCase());
+                const idx = name => headers.indexOf(name);
+
+                let countNew = 0, countUpdate = 0;
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    const cols = lines[i].split(';');
+                    const get = name => (idx(name) !== -1 && cols[idx(name)] !== undefined) ? cols[idx(name)].trim() : '';
+
+                    const nom = get('NOM').toUpperCase();
+                    const prenom = get('PRENOM');
+                    const licence = get('LICENCE') || get('N° LICENCE') || get('NUM LICENCE') || get('N°LICENCE');
+                    const club = get('ASSOCIATION NOM') || '-';
+                    const rawCat = get('CATÉGORIE E') || get('CATEGORIE E') || get('CATEGORIE');
+                    const epreuve = get('EPREUVE');
+                    const placeStr = get('PLACE').toUpperCase();
+                    if (!nom || !prenom || !epreuve) continue;
+
+                    const disc = detectDiscipline(epreuve);
+                    if (!disc) continue; // épreuve hors programme (ni 150 ni 154)
+
+                    const category = normalizeCategoryCode(rawCat);
+                    let status = "OK";
+                    if (['DNS', 'DSQ', 'HM', 'DNF'].includes(placeStr)) status = placeStr;
+
+                    let series = [], total = 0, hasScores = false;
+                    for (let s = 1; s <= disc.series; s++) {
+                        const raw = get('SÉRIE ' + s) || get('SERIE ' + s);
+                        const v = parseFloat(raw.replace(',', '.'));
+                        if (!isNaN(v)) { series.push(Math.round(v * 10) / 10); total += v; hasScores = true; }
+                        else series.push(0);
+                    }
+                    let mouches = 0;
+                    const rawM = get('NOMBRE MOUCHES');
+                    if (rawM) { const vm = parseInt(rawM, 10); if (!isNaN(vm)) mouches = vm; }
+
+                    const zeroes = (status === 'DNS' || status === 'DSQ');
+                    const payload = {
+                        licence, lastName: nom, firstName: prenom, club, category,
+                        discipline: disc.key, status,
+                        score: zeroes ? 0 : Math.round(total * 10) / 10,
+                        series: zeroes ? Array(disc.series).fill(0) : series,
+                        mouches: zeroes ? 0 : mouches
+                    };
+                    if (etapeType === 'finale') payload.round = round;
+
+                    const existing = shootersData.find(s =>
+                        s.lastName === nom && s.firstName === prenom && s.discipline === disc.key &&
+                        (etapeType !== 'finale' || (s.round || 'qualif') === round)
+                    );
+                    if (existing) { etapeRef.child('shooters/' + existing.id).update(payload); countUpdate++; }
+                    else { etapeRef.child('shooters').push(payload); countNew++; }
+                }
+                loader.style.display = 'none';
+                touchLastUpdated();
+                alert(`Import terminé :\n- ${countNew} nouveaux tireurs\n- ${countUpdate} fiches mises à jour`);
+                fileInput.value = '';
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+    </script>
+</body>
+
+</html>
