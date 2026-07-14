@@ -17,7 +17,7 @@ const CONFIG = {
   // (sert à générer les QR codes). Ex : "https://moncompte.github.io/challenge-edt-centre"
   githubBase: "https://toma-it.github.io/challenge-edt-centre",
 
-  firebase = {
+  firebase: {
     apiKey: "AIzaSyDA3ZkdOXRlHTwl_-3ZCzlkFtxIU3XbOos",
     authDomain: "resultats-challengedt-centre.firebaseapp.com",
     databaseURL: "https://resultats-challengedt-centre-default-rtdb.europe-west1.firebasedatabase.app",
